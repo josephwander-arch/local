@@ -2,7 +2,7 @@
 
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
-Version 1.1.1 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local-mcp)
+Version 1.1.1 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
 
 ---
 
@@ -140,12 +140,12 @@ crashes — local is the server.
 ### 1. Get the binary
 
 Download `local.exe` for your architecture from the
-[releases page](https://github.com/josephwander-arch/local-mcp/releases).
+[releases page](https://github.com/josephwander-arch/local/releases).
 
 | Architecture | Binary |
 |---|---|
-| x64 | `local-x86_64-pc-windows-msvc.exe` |
-| ARM64 | `local-aarch64-pc-windows-msvc.exe` |
+| x64 | `local_x64_windows.exe` |
+| ARM64 | `local_arm64_windows.exe` |
 
 Place it wherever you keep MCP server binaries (e.g. `C:\CPC\servers\`).
 
@@ -299,4 +299,4 @@ If local saves you time, consider supporting development:
 
 - **GitHub:** [github.com/josephwander-arch](https://github.com/josephwander-arch/)
 - **Email:** protipsinc@gmail.com
-- **Issues:** [github.com/josephwander-arch/local-mcp/issues](https://github.com/josephwander-arch/local-mcp/issues)
+- **Issues:** [github.com/josephwander-arch/local/issues](https://github.com/josephwander-arch/local/issues)
