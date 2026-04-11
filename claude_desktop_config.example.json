@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "local": {
+      "command": "C:\\CPC\\servers\\local.exe",
+      "args": [],
+      "env": {
+        "LOCAL_BREADCRUMB_RETENTION_DAYS": "30"
+      }
+    }
+  }
+}
+
+// ARM64 alternative — replace the "command" value above with:
+// "command": "C:\\CPC\\servers\\local-arm64.exe"
+//
+// Path options:
+//   x64:   "C:\\CPC\\servers\\local.exe"
+//   ARM64: "C:\\CPC\\servers\\local-arm64.exe"
+//
+// If your binary is elsewhere, update the path accordingly.
+// The env block is optional — defaults shown above.

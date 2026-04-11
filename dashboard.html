@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPC Command Center v6</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.1/marked.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0a0e17; color: #e0e0e0; min-height: 100vh; line-height: 1.5; }
+
+        /* Header */
+        .header { text-align: center; padding: 18px 20px 14px; border-bottom: 1px solid rgba(0,217,255,0.12); }
+        .header h1 { font-size: 1.6em; font-weight: 700; background: linear-gradient(90deg, #00d9ff, #00ff88, #00d9ff); background-size: 200% auto; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: grad 3s linear infinite; }
+        @keyframes grad { to { background-position: 200% center; } }
+        .header-stats { display: flex; justify-content: center; gap: 16px; margin-top: 10px; flex-wrap: wrap; }
+        .hstat { text-align: center; }
+        .hstat .val { font-size: 1.1em; font-weight: 700; color: #00ff88; }
+        .hstat .lbl { font-size: 0.6em; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 2px; padding: 8px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); flex-wrap: wrap; justify-content: center; background: rgba(0,0,0,0.2); }
+        .tab { padding: 6px 14px; background: transparent; border: 1px solid transparent; border-radius: 4px; cursor: pointer; font-size: 0.78em; color: #888; transition: all 0.15s; font-weight: 500; }
+        .tab:hover { color: #ccc; background: rgba(255,255,255,0.04); }
+        .tab.active { color: #00d9ff; border-color: rgba(0,217,255,0.3); background: rgba(0,217,255,0.06); }
+
+        /* Content */
+        .content { max-width: 1600px; margin: 0 auto; padding: 16px; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* Cards */
+        .card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px; margin-bottom: 10px; }
+        .card h2 { font-size: 0.82em; color: #00d9ff; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 600; }
+
+        /* Grid */
+        .grid { display: grid; gap: 10px; }
+        .grid-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-auto { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+
+        /* Server dots */
+        .srv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+        .srv { background: rgba(0,0,0,0.3); border-radius: 6px; padding: 8px 10px; text-align: center; font-size: 0.75em; border: 1px solid rgba(255,255,255,0.04); transition: all 0.15s; }
+        .srv:hover { border-color: rgba(0,217,255,0.2); }
+        .srv .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+        .srv .dot.up { background: #00ff88; box-shadow: 0 0 4px #00ff88; }
+        .srv .dot.down { background: #ff4444; }
+        .srv .name { font-weight: 600; }
+
+        /* Server detail cards */
+        .srv-card { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px; }
+        .srv-card .srv-name { font-weight: 700; font-size: 0.9em; color: #00d9ff; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .srv-card .srv-meta { font-size: 0.72em; color: #666; }
+        .srv-card .srv-status { font-size: 0.72em; margin-top: 4px; }
+
+        /* Tier label */
+        .tier-label { font-size: 0.7em; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin: 14px 0 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .tier-label:first-child { margin-top: 0; }
+
+        /* Badges */
+        .badge { padding: 2px 7px; border-radius: 3px; font-size: 0.65em; font-weight: 600; }
+        .badge.up { background: rgba(0,255,136,0.12); color: #00ff88; }
+        .badge.down { background: rgba(255,68,68,0.12); color: #ff4444; }
+        .badge.active { background: rgba(0,217,255,0.12); color: #00d9ff; }
+
+        /* Volumes catalog layout */
+        .vol-split { display: flex; gap: 0; height: calc(100vh - 160px); }
+        .vol-tree { width: 350px; min-width: 280px; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px 0 0 8px; overflow-y: auto; }
+        .vol-viewer { flex: 1; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.06); border-left: none; border-radius: 0 8px 8px 0; overflow-y: auto; display: flex; flex-direction: column; }
+        .vol-tree-header, .vol-viewer-header { padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.8em; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .vol-tree-header { color: #00d9ff; }
+        .vol-viewer-header { color: #00ff88; }
+        .vol-search { width: 100%; padding: 6px 10px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 4px; color: #e0e0e0; font-size: 0.78em; outline: none; margin: 0; }
+        .vol-search:focus { border-color: rgba(0,217,255,0.3); }
+        .vol-search::placeholder { color: #555; }
+        .vol-cat-header { padding: 8px 12px; cursor: pointer; font-size: 0.78em; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.03); user-select: none; }
+        .vol-cat-header:hover { background: rgba(255,255,255,0.02); }
+        .vol-cat-header .cat-arrow { font-size: 0.6em; transition: transform 0.15s; display: inline-block; }
+        .vol-cat-header .cat-arrow.open { transform: rotate(90deg); }
+        .vol-cat-body { display: block; }
+        .vol-cat-body.open { display: block; }
+        .vol-topic { padding: 8px 12px; margin: 4px 8px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+        .vol-topic:hover { border-color: rgba(0,217,255,0.2); background: rgba(0,217,255,0.03); }
+        .vol-topic-name { font-weight: 600; font-size: 0.82em; color: #00d9ff; display: flex; justify-content: space-between; align-items: center; }
+        .vol-topic-name .file-count { background: rgba(0,217,255,0.1); color: #00d9ff; padding: 1px 6px; border-radius: 8px; font-size: 0.8em; font-weight: 500; }
+        .vol-topic-purpose { font-size: 0.72em; color: #777; margin-top: 2px; }
+        .vol-topic-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+        .vol-tag { background: rgba(0,217,255,0.1); color: #00d9ff; border-radius: 12px; padding: 2px 8px; font-size: 0.7em; }
+        .vol-topic-files { display: block; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.04); }
+        .vol-topic-files.open { display: block; }
+        .vol-file { padding: 3px 12px; cursor: pointer; color: #999; font-size: 0.78em; border-radius: 3px; }
+        .vol-file:hover { background: rgba(0,217,255,0.05); color: #e0e0e0; }
+        .vol-file.active { color: #00ff88; background: rgba(0,255,136,0.06); }
+        .vol-md { flex: 1; padding: 20px; font-size: 0.85em; line-height: 1.7; overflow-y: auto; color: #ccc; }
+        .vol-md h1, .vol-md h2, .vol-md h3 { color: #00d9ff; margin: 16px 0 8px; }
+        .vol-md h1 { font-size: 1.4em; }
+        .vol-md h2 { font-size: 1.15em; }
+        .vol-md h3 { font-size: 1em; }
+        .vol-md code { background: rgba(0,217,255,0.08); padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 0.9em; color: #00d9ff; }
+        .vol-md pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; overflow-x: auto; margin: 10px 0; }
+        .vol-md pre code { background: none; padding: 0; color: #e0e0e0; }
+        .vol-md a { color: #00d9ff; }
+        .vol-md blockquote { border-left: 3px solid #00d9ff; padding-left: 12px; color: #999; margin: 10px 0; }
+        .vol-md ul, .vol-md ol { padding-left: 20px; margin: 8px 0; }
+        .vol-md table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .vol-md th, .vol-md td { padding: 6px 10px; border: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 0.9em; }
+        .vol-md th { color: #00d9ff; background: rgba(0,217,255,0.05); }
+
+        /* File Dialog Modal */
+        .file-dialog-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .file-dialog { width: 80%; height: 80%; background: #0a0e17; border: 1px solid rgba(0,217,255,0.2); border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+        .file-dialog-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: rgba(0,217,255,0.04); border-bottom: 1px solid rgba(0,217,255,0.12); }
+        .file-dialog-header .fd-title { font-size: 0.85em; font-weight: 600; color: #00d9ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .file-dialog-header .fd-actions { display: flex; gap: 8px; align-items: center; }
+        .fd-btn { padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.04); color: #888; font-size: 0.75em; cursor: not-allowed; opacity: 0.5; }
+        .fd-btn:hover { background: rgba(255,255,255,0.06); }
+        .fd-close { background: none; border: none; color: #888; font-size: 1.2em; cursor: pointer; padding: 2px 8px; border-radius: 4px; }
+        .fd-close:hover { color: #ff4444; background: rgba(255,68,68,0.1); }
+        .file-dialog-body { flex: 1; padding: 24px; overflow-y: auto; font-size: 0.85em; line-height: 1.7; color: #ccc; }
+        .file-dialog-body h1, .file-dialog-body h2, .file-dialog-body h3 { color: #00d9ff; margin: 16px 0 8px; }
+        .file-dialog-body h1 { font-size: 1.5em; border-bottom: 1px solid rgba(0,217,255,0.15); padding-bottom: 8px; }
+        .file-dialog-body h2 { font-size: 1.2em; }
+        .file-dialog-body code { background: rgba(0,217,255,0.08); padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 0.9em; color: #00d9ff; }
+        .file-dialog-body pre { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px; overflow-x: auto; margin: 10px 0; }
+        .file-dialog-body pre code { background: none; padding: 0; color: #e0e0e0; }
+        .file-dialog-body a { color: #00d9ff; }
+        .file-dialog-body blockquote { border-left: 3px solid #00d9ff; padding-left: 12px; color: #999; margin: 10px 0; }
+        .file-dialog-body ul, .file-dialog-body ol { padding-left: 20px; margin: 8px 0; }
+        .file-dialog-body table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .file-dialog-body th, .file-dialog-body td { padding: 6px 10px; border: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 0.9em; }
+        .file-dialog-body th { color: #00d9ff; background: rgba(0,217,255,0.05); }
+
+        /* Quick View Drop Zone */
+        .vol-drop-zone { border: 2px dashed rgba(0,217,255,0.2); border-radius: 8px; padding: 16px; margin-top: 10px; text-align: center; color: #555; font-size: 0.8em; transition: all 0.2s; }
+        .vol-drop-zone.drag-over { border-color: #00d9ff; background: rgba(0,217,255,0.04); color: #00d9ff; }
+
+        /* Build table */
+        table { width: 100%; border-collapse: collapse; font-size: 0.82em; }
+        th, td { padding: 6px 10px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        th { color: #00d9ff; font-weight: 600; font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        /* Breadcrumb steps */
+        .bc-step { padding: 6px 12px; margin: 3px 0; border-radius: 4px; font-size: 0.82em; display: flex; align-items: center; gap: 8px; }
+        .bc-step.done { color: #00ff88; background: rgba(0,255,136,0.06); }
+        .bc-step.current { color: #00d9ff; background: rgba(0,217,255,0.1); border-left: 3px solid #00d9ff; font-weight: 600; }
+        .bc-step.pending { color: #666; }
+
+        /* Reminder items */
+        .rem-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #00ff88; font-size: 0.82em; }
+        .rem-item.overdue { border-left-color: #ff4444; background: rgba(255,68,68,0.06); }
+        .rem-item.soon { border-left-color: #ffcc00; background: rgba(255,200,0,0.04); }
+        .rem-item .rem-msg { flex: 1; }
+        .rem-item .rem-due { font-size: 0.8em; color: #888; white-space: nowrap; }
+        .rem-item .rem-actions { display: flex; gap: 4px; }
+
+        /* Buttons */
+        .btn { padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 0.72em; font-weight: 500; transition: all 0.15s; }
+        .btn-green { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .btn-green:hover { background: rgba(0,255,136,0.3); }
+        .btn-red { background: rgba(255,68,68,0.15); color: #ff4444; }
+        .btn-red:hover { background: rgba(255,68,68,0.3); }
+        .btn-blue { background: rgba(0,217,255,0.15); color: #00d9ff; }
+        .btn-blue:hover { background: rgba(0,217,255,0.3); }
+
+        /* Dead Drop messages */
+        .dd-msg { padding: 10px 12px; background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #00d9ff; }
+        .dd-msg.unread { border-left-color: #00ff88; }
+        .dd-msg .dd-from { font-weight: 600; font-size: 0.78em; color: #00d9ff; background: rgba(0,217,255,0.1); padding: 1px 6px; border-radius: 3px; }
+        .dd-msg .dd-time { font-size: 0.7em; color: #666; margin-top: 4px; }
+        .dd-msg .dd-body { font-size: 0.82em; margin-top: 6px; color: #ccc; }
+        .dd-msg .dd-status { font-size: 0.6em; padding: 1px 5px; border-radius: 3px; margin-left: 6px; }
+        .dd-msg .dd-status.unread { background: rgba(0,255,136,0.12); color: #00ff88; }
+        .dd-msg .dd-status.read { background: rgba(255,255,255,0.05); color: #666; }
+
+        /* Loaf cards */
+        .loaf-card { background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 14px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+        .loaf-card:hover { border-color: rgba(0,217,255,0.2); }
+        .loaf-card.active-loaf { border-color: rgba(0,255,136,0.2); }
+        .loaf-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .loaf-goal { font-weight: 600; font-size: 0.9em; }
+        .loaf-phase { font-size: 0.72em; color: #888; }
+        .loaf-detail { display: none; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06); }
+        .loaf-detail.show { display: block; }
+        .loaf-task { padding: 4px 8px; font-size: 0.8em; border-radius: 3px; margin: 2px 0; }
+        .loaf-task.done { color: #00ff88; }
+        .loaf-task.current { color: #00d9ff; }
+        .loaf-task.pending { color: #666; }
+
+        /* Skills list */
+        .skill-item { padding: 10px 12px; background: rgba(0,0,0,0.2); border-radius: 6px; margin-bottom: 6px; border-left: 3px solid rgba(0,217,255,0.3); }
+        .skill-item .sk-name { font-weight: 600; font-size: 0.85em; color: #00d9ff; }
+        .skill-item .sk-desc { font-size: 0.78em; color: #888; margin-top: 2px; }
+
+        /* Progress bar */
+        .pbar { height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden; margin: 6px 0; }
+        .pbar .fill { height: 100%; background: linear-gradient(90deg, #00ff88, #00d9ff); border-radius: 3px; transition: width 0.3s; }
+
+        /* Placeholder */
+        .placeholder { text-align: center; padding: 40px 20px; color: #555; }
+        .placeholder .icon { font-size: 2em; margin-bottom: 8px; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+        ::-webkit-scrollbar-thumb { background: #00d9ff; border-radius: 2px; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .vol-split { flex-direction: column; height: auto; }
+            .vol-tree { width: 100%; max-height: 400px; border-radius: 8px 8px 0 0; }
+            .vol-viewer { border-radius: 0 0 8px 8px; border-left: 1px solid rgba(255,255,255,0.06); min-height: 400px; }
+        }
+
+        .footer { text-align: center; padding: 12px; color: #333; font-size: 0.65em; }
+
+        /* Error state */
+        .err { color: #ff4444; font-size: 0.8em; padding: 10px; text-align: center; }
+        .offline { color: #888; font-size: 0.8em; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>CPC Command Center</h1>
+    <div class="header-stats">
+        <div class="hstat"><div class="val" id="stat-servers">14</div><div class="lbl">Servers</div></div>
+        <div class="hstat"><div class="val" id="stat-tools">~312</div><div class="lbl">Tools</div></div>
+        <div class="hstat"><div class="val" id="stat-loaves">--</div><div class="lbl">Loaves</div></div>
+        <div class="hstat"><div class="val" id="stat-reminders">--</div><div class="lbl">Reminders</div></div>
+        <div class="hstat"><div class="val" id="stat-breadcrumb">--</div><div class="lbl">Breadcrumb</div></div>
+        <div class="hstat"><div class="val" id="stat-days">--</div><div class="lbl">Days</div></div>
+    </div>
+</div>
+
+<div class="tabs">
+    <div class="tab active" onclick="showTab('overview')">Overview</div>
+    <div class="tab" onclick="showTab('servers')">Servers</div>
+    <div class="tab" onclick="showTab('volumes')">Volumes</div>
+    <div class="tab" onclick="showTab('builds')">Builds</div>
+    <div class="tab" onclick="showTab('breadcrumbs')">Breadcrumbs</div>
+    <div class="tab" onclick="showTab('loaf')">Loaf</div>
+    <div class="tab" onclick="showTab('reminders')">Reminders</div>
+    <div class="tab" onclick="showTab('deaddrop')">Dead Drop</div>
+    <div class="tab" onclick="showTab('skills')">Skills</div>
+</div>
+
+<div class="content">
+
+    <!-- ==================== OVERVIEW ==================== -->
+    <div id="pane-overview" class="tab-pane active">
+        <div class="card">
+            <h2>Server Status</h2>
+            <div class="srv-grid" id="overview-servers"></div>
+        </div>
+        <div class="grid grid-3" style="margin-top:10px;">
+            <div class="card">
+                <h2>Quick Stats</h2>
+                <div style="font-size:0.85em;display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Total Tools</span><span style="color:#00ff88;font-weight:600;">~312</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">MCP Servers</span><span style="color:#00ff88;font-weight:600;">14</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Active Loaves</span><span style="color:#00d9ff;font-weight:600;" id="ov-loaves">--</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Pending Reminders</span><span style="color:#00d9ff;font-weight:600;" id="ov-reminders">--</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Active Breadcrumb</span><span style="color:#00d9ff;font-weight:600;" id="ov-breadcrumb">--</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Days Since Genesis</span><span style="color:#ffaa00;font-weight:600;" id="ov-days">--</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>Active Breadcrumb</h2>
+                <div id="ov-bc-detail" class="placeholder"><div class="icon">--</div><div>Checking...</div></div>
+            </div>
+            <div class="card">
+                <h2>Recent Reminders</h2>
+                <div id="ov-rem-list" class="placeholder"><div class="icon">--</div><div>Checking...</div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SERVERS ==================== -->
+    <div id="pane-servers" class="tab-pane">
+        <div id="servers-content"></div>
+    </div>
+
+    <!-- ==================== VOLUMES ==================== -->
+    <div id="pane-volumes" class="tab-pane">
+        <div class="vol-split">
+            <div class="vol-tree">
+                <div class="vol-tree-header">
+                    <span>Volumes Catalog</span>
+                    <span style="font-size:0.8em;color:#555;" id="vol-topic-count"></span>
+                </div>
+                <div style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.04);">
+                    <input type="text" class="vol-search" id="vol-search" placeholder="Filter topics by keyword..." oninput="filterVolTopics(this.value)">
+                </div>
+                <div id="vol-tree-list" style="padding:0;"></div>
+            </div>
+            <div class="vol-viewer">
+                <div class="vol-viewer-header">
+                    <span id="vol-title">Markdown Viewer</span>
+                </div>
+                <div id="vol-content" class="vol-md">
+                    <div class="placeholder">
+                        <div class="icon">&#128196;</div>
+                        <div>Click a topic or file to view its contents</div>
+                        <div style="font-size:0.8em;margin-top:6px;color:#444;">Markdown rendered with marked.js</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="vol-drop-zone" id="vol-drop-zone"
+             ondragover="event.preventDefault(); this.classList.add('drag-over');"
+             ondragleave="this.classList.remove('drag-over');"
+             ondrop="event.preventDefault(); this.classList.remove('drag-over'); loadVolFile(event.dataTransfer.getData('text/plain'));">
+            Drop a file here to preview
+        </div>
+    </div>
+
+    <!-- File Dialog Modal -->
+    <div class="file-dialog-overlay" id="file-dialog-overlay" style="display:none;" onclick="if(event.target===this)closeFileDialog();">
+        <div class="file-dialog">
+            <div class="file-dialog-header">
+                <span class="fd-title" id="fd-title">File</span>
+                <div class="fd-actions">
+                    <button class="fd-btn" title="Requires local file server">Open in Editor</button>
+                    <button class="fd-close" onclick="closeFileDialog();">&times;</button>
+                </div>
+            </div>
+            <div class="file-dialog-body" id="fd-body"></div>
+        </div>
+    </div>
+
+    <!-- ==================== BUILDS ==================== -->
+    <div id="pane-builds" class="tab-pane">
+        <div class="card">
+            <h2>Current Binary Versions</h2>
+            <table>
+                <thead><tr><th>Server</th><th>Binary</th><th>Path</th><th>Status</th></tr></thead>
+                <tbody id="builds-binaries"></tbody>
+            </table>
+        </div>
+        <div class="card">
+            <h2>Recent Build History</h2>
+            <div id="builds-history"><div class="placeholder"><div class="icon">&#9203;</div><div>Loading...</div></div></div>
+        </div>
+    </div>
+
+    <!-- ==================== BREADCRUMBS ==================== -->
+    <div id="pane-breadcrumbs" class="tab-pane">
+        <div class="card">
+            <h2>Active Operation</h2>
+            <div id="bc-active"><div class="placeholder"><div class="icon">--</div><div>Checking...</div></div></div>
+        </div>
+        <div class="card">
+            <h2>History</h2>
+            <div id="bc-history"><div class="placeholder"><div class="icon">--</div><div>Loading...</div></div></div>
+        </div>
+    </div>
+
+    <!-- ==================== REMINDERS ==================== -->
+    <div id="pane-reminders" class="tab-pane">
+        <div class="card">
+            <h2>Pending Reminders <span id="rem-count" style="font-size:0.85em;color:#888;"></span></h2>
+            <div id="rem-list"><div class="placeholder"><div class="icon">&#9203;</div><div>Loading...</div></div></div>
+        </div>
+    </div>
+
+    <!-- ==================== DEAD DROP ==================== -->
+    <div id="pane-deaddrop" class="tab-pane">
+        <div class="card">
+            <h2 style="display:flex;justify-content:space-between;align-items:center;">
+                Dead Drop Messages
+                <div style="display:flex;gap:6px;">
+                    <button class="btn btn-blue" onclick="markAllDDRead()">Mark All Read</button>
+                    <button class="btn btn-red" onclick="clearAllDD()">Clear Read</button>
+                </div>
+            </h2>
+            <div id="dd-messages"><div class="placeholder"><div class="icon">&#128236;</div><div>Loading...</div></div></div>
+        </div>
+    </div>
+
+    <!-- ==================== LOAF ==================== -->
+    <div id="pane-loaf" class="tab-pane">
+        <div class="card">
+            <h2>Active Project Loaves</h2>
+            <div id="loaf-active"><div class="placeholder"><div class="icon">&#128203;</div><div>Loading...</div></div></div>
+        </div>
+        <div class="card">
+            <h2>Archived Loaves</h2>
+            <div id="loaf-archived"><div class="offline">Completed loaves shown here</div></div>
+        </div>
+    </div>
+
+    <!-- ==================== SKILLS ==================== -->
+    <div id="pane-skills" class="tab-pane">
+        <div class="card">
+            <h2>CPC Skills (15)</h2>
+            <div id="skills-list"></div>
+        </div>
+    </div>
+
+</div>
+
+<div class="footer">CPC Command Center v6 | <span id="footer-time"></span> | <span id="footer-days"></span> days since Genesis (Sep 24, 2025)</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const API = 'http://localhost:9876';
+const LOCAL_API = 'http://127.0.0.1:8001/api';
+const REMINDER_API = 'http://127.0.0.1:8003/api';
+const BC_API = 'http://127.0.0.1:8002/api';
+// Installer sets this to user's chosen Volumes path
+const VOLUMES_BASE = 'C:/My Drive/Volumes';
+const LOAF_DIR = 'C:\\CPC\\data\\loaves';
+const GENESIS = new Date('2025-09-24');
+
+const SERVERS = [
+    'atlas', 'utonomous', 'local', 'ops', 'browser', 'programmer',
+    'manager', 'reminder-rs', 'vision', 'voice', 'echo', 'learning', 'learn'
+];
+
+const SERVER_TIERS = {
+    'Tier 1 — Core': ['ops'],
+    'Tier 2 — Infrastructure': ['local'],
+    'Tier 3 — Development': ['programmer'],
+    'Knowledge': ['atlas', 'utonomous', 'learning'],
+    'Services': ['reminder-rs', 'voice', 'vision', 'browser'],
+    'Dev Tools': ['manager', 'echo'],
+    'Combined': ['learn']
+};
+
+const SERVER_BINARIES = [
+    { name: 'atlas', bin: 'atlas.exe', src: 'rust-mcp/atlas/' },
+    { name: 'utonomous', bin: 'utonomous.exe', src: 'rust-mcp/utonomous/' },
+    { name: 'local', bin: 'local.exe', src: 'rust-mcp/local/' },
+    { name: 'ops', bin: 'ops.exe', src: 'rust-mcp/ops/' },
+    { name: 'browser', bin: 'browser-mcp.exe', src: 'rust-mcp/browser-mcp/' },
+    { name: 'programmer', bin: 'programmer.exe', src: 'rust-mcp/programmer/' },
+    { name: 'manager', bin: 'manager.exe', src: 'rust-mcp/manager-mcp/' },
+    { name: 'reminder-rs', bin: 'reminder-rs.exe', src: 'rust-mcp/reminder-rs/' },
+    
+    { name: 'vision', bin: 'vision.exe', src: 'rust-mcp/vision/' },
+    { name: 'voice', bin: 'voice.exe', src: 'rust-mcp/voice/' },
+    { name: 'echo', bin: 'echo.exe', src: 'rust-mcp/echo/' },
+    { name: 'learning', bin: 'learning.exe', src: 'rust-mcp/learning-mcp/' },
+    { name: 'learn', bin: 'learn.exe', src: 'rust-mcp/learn/' }
+];
+
+const CATALOG_TOPICS = {
+  'system_architecture': { keywords: ['architecture','breadcrumb','sidecar','filesystem','tool definitions'], purpose: 'Services, breadcrumbs, filesystem, portability, tool definitions', files: ['Operating_system_architecture.md','Operating_filesystem.md','breadcrumbs.md','services_reference.md','portability_routing.md','Project_Loaf_Spec_v1.md','Browser_MCP_Build_Spec_v1.md','tool_definitions_toc.md','naming_reference.md','mcp_architecture_final_spec.md'] },
+  'boot': { keywords: ['boot','startup','platform','tier'], purpose: 'Boot procedures, platform detection', files: ['Operating_boot.md','Operating_preferences.md','platform_capabilities.md'] },
+  'builds': { keywords: ['build','deploy','manifest'], purpose: 'Build system, manifests', files: ['Operating_builds.md','BUILD_SYSTEM.md','CPC_MASTER_TODO.md','CPC_ROADMAP_v2.md'] },
+  'scripts': { keywords: ['script','automation','agent'], purpose: 'Agent pipeline, utility scripts', files: ['Operating_scripts.md','SETUP_CLAUDE_CODE.md'] },
+  'skills': { keywords: ['skill','procedure','config'], purpose: '15 hot-swappable behavioral config files', files: ['README.md','Skill_Rewrite_Spec_v1.md','STATUS.md'] },
+  'extraction_protocol': { keywords: ['extraction','3q','insight'], purpose: 'Insight capture rules', files: ['Operating_extraction_protocol.md','QUICK_REFERENCE.md','vol_01_3q_check.md','vol_02_auto_triggers.md'] },
+  'behavioral_patterns': { keywords: ['behavioral','pattern','debug','correction'], purpose: 'Extraction triggers, debugging rules, learned patterns', files: ['Operating_behavioral_patterns.md','emotional_awareness.md','liberation_protocol_v3.md'] },
+  'friction_reduction': { keywords: ['friction','liberation','offload'], purpose: 'Liberation triggers, offload patterns', files: ['Operating_friction_reduction.md','offload_pattern.md'] },
+  'liberation_logic': { keywords: ['liberation','auto-execute','permission'], purpose: 'Auto-execute rules', files: ['Operating_liberation_logic.md'] },
+  'learning': { keywords: ['learning','analytics'], purpose: 'Learning system, analytics', files: ['Operating_learning.md'] },
+  'trading': { keywords: ['trading','stocks','chart','macro'], purpose: 'Stocks MCP, indicators, technical files', files: ['Operating_trading.md','ref_chart_patterns.md','ref_technical_indicators.md','ref_options_trading.md','ref_risk_execution.md','ref_trading_process.md','WATCHLIST.md'] },
+  'autonomous_research': { keywords: ['research','screening','analysis'], purpose: 'Stock screening, state files', files: ['Operating_autonomous_research.md'] },
+  'multi_ai_coordination': { keywords: ['multi-ai','coordination','gemini','gpt'], purpose: 'Cross-AI workflows', files: ['Operating_multi_ai_coordination.md','inbox.md','VK2_tool_specification.md'] },
+  'dead_drop': { keywords: ['dead-drop','queue','mobile','inbox'], purpose: 'Mobile to Desktop queue', files: ['Operating_dead_drop.md','PROTOCOL.md'] },
+  'handoffs': { keywords: ['handoff','session','continuity'], purpose: 'Session continuity, task handoffs', files: ['Operating_handoffs.md','HANDOFF_march12_2026.md','SESSION_WRAP_march12_2026_pm.md'] },
+  'transcripts': { keywords: ['transcript','chat','session'], purpose: 'Session transcripts', files: ['2026-03-01_1916.md'] },
+  'joseph_profile': { keywords: ['user','joseph','profile'], purpose: 'User context, background', files: ['Operating_joseph_profile.md'] },
+  'diary': { keywords: ['diary','journal','weekly'], purpose: 'Personal weekly log', files: ['Operating_diary.md','weekly_log.md'] },
+  'product_pricing': { keywords: ['insurance','pricing','medicare'], purpose: 'Insurance product pricing', files: ['Operating_product_pricing.md'] },
+  'communication_modes': { keywords: ['tone','style','response'], purpose: 'Response styles, tone adaptation', files: ['Operating_communication_modes.md'] },
+  'ethics': { keywords: ['ethics','safety','guardrail'], purpose: 'Ethics, compliance, guardrails', files: ['Operating_ethics.md','vol_01_trust_model.md','vol_02_never_auto_execute.md'] },
+  'anti_patterns': { keywords: ['anti','avoid','dont'], purpose: 'What NOT to do', files: ['Operating_anti_patterns.md'] },
+  'error_patterns': { keywords: ['error','pattern','diagnostic'], purpose: 'Error pattern database', files: ['Operating_error_patterns.md'] },
+  'error_translation': { keywords: ['error','translate','utf8'], purpose: 'Error message handling', files: ['Operating_error_translation.md'] },
+  'memory_management': { keywords: ['memory','slots','audit'], purpose: 'Memory slots, audit', files: ['Operating_memory_management.md'] },
+  'symbolic_compression': { keywords: ['compression','symbol','token'], purpose: 'Token compression techniques', files: ['Operating_symbolic_compression.md'] },
+  'theorybuilds': { keywords: ['theory','speculative','future'], purpose: 'Speculative architectures', files: ['Operating_theorybuilds.md'] },
+  'tool_selection': { keywords: ['tool','routing','browser'], purpose: 'Tool routing, browser patterns', files: ['Operating_tool_selection.md','tool_routing_quick_ref.md'] },
+  'research': { keywords: ['CPC','academic','paper'], purpose: 'CPC vs academic papers', files: ['Operating_research.md','claude_code_competitive_analysis.md'] },
+  'retrospection': { keywords: ['retrospect','self-analysis'], purpose: 'Post-conversation self-analysis', files: ['Operating_retrospection.md','ARCHITECTURE.md'] },
+  'pulse': { keywords: ['pulse','morning','brief'], purpose: 'Morning intelligence brief', files: ['Operating_pulse.md'] },
+  'marketing': { keywords: ['marketing','outreach'], purpose: 'CPC marketing materials', files: ['Operating_marketing.md','cpc_one_pager.md'] },
+  'reminders': { keywords: ['reminder','schedule'], purpose: 'Reminder schema', files: ['Operating_reminders.md','SCHEMA.md'] },
+  'cross_reference': { keywords: ['cross-topic','mapping'], purpose: 'Cross-topic pattern mapping', files: ['Operating_cross_reference.md'] },
+  'voice_sessions': { keywords: ['voice','speak','listen'], purpose: 'Voice checkpoints', files: [] },
+};
+
+const CATALOG_CATEGORIES = {
+  '\u{1F4D6} QUICK REFERENCE': ['CATALOG.md', 'ROADMAP.md', 'CHANGELOG.md', 'TASK_QUEUE.md'],
+  '\u{1F3D7}\uFE0F SYSTEM': ['system_architecture', 'boot', 'builds', 'scripts', 'skills'],
+  '\u{1F9E0} KNOWLEDGE': ['extraction_protocol', 'behavioral_patterns', 'friction_reduction', 'liberation_logic', 'learning'],
+  '\u{1F4C8} TRADING': ['trading', 'autonomous_research'],
+  '\u{1F916} AI COORDINATION': ['multi_ai_coordination', 'dead_drop', 'handoffs', 'transcripts'],
+  '\u{1F464} PERSONAL': ['joseph_profile', 'diary', 'product_pricing', 'communication_modes', 'ethics'],
+  '\u{1F4E6} OTHER': ['anti_patterns', 'error_patterns', 'error_translation', 'memory_management', 'symbolic_compression', 'theorybuilds', 'tool_selection', 'research', 'retrospection', 'pulse', 'marketing', 'reminders', 'cross_reference', 'voice_sessions'],
+};
+
+const SKILLS = [
+    { name: 'ai-delegation', desc: 'Patterns for delegating tasks across AI models and agents' },
+    { name: 'cpc-behavioral', desc: 'How to handle corrections, ambiguity, debugging, and emotional signals' },
+    { name: 'cpc-boot', desc: 'System startup procedures and session initialization' },
+    { name: 'cpc-build-deploy', desc: 'Build and deploy procedures for Rust MCP servers' },
+    { name: 'cpc-delegation-patterns', desc: 'Multi-agent delegation and task routing strategies' },
+    { name: 'cpc-extraction', desc: 'Capture insights, decisions, and corrections into Volumes' },
+    { name: 'cpc-friction', desc: 'Eliminate permission gates, offload heavy work, reduce token waste' },
+    { name: 'cpc-knowledge-intake', desc: 'Processing and integrating new knowledge into the system' },
+    { name: 'cpc-operations', desc: 'Day-to-day operational procedures and maintenance tasks' },
+    { name: 'cpc-router', desc: 'Master index routing to correct skill for any given task' },
+    { name: 'cpc-sidecar-maintenance', desc: 'Maintenance procedures for sidecar processes and services' },
+    { name: 'cpc-tool-routing', desc: 'Which of the ~312 tools to use for any given task' },
+    { name: 'cpc-trading', desc: 'Stock analysis, Focus 12, technical indicators, TradeStation' },
+    { name: 'cpc-volumes-maintenance', desc: 'Consolidation, dedup, stale detection, knowledge hygiene' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentTab = 'overview';
+let pollTimer = null;
+let serverStatus = {};
+let ddData = [];
+let volFilterQuery = '';
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function showTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => {
+        if (t.textContent.toLowerCase().replace(/\s/g, '') === tab.replace('deaddrop', 'deaddrop').replace('overview', 'overview'))
+            t.classList.add('active');
+    });
+    // Simpler: find by onclick
+    document.querySelectorAll('.tab').forEach(t => {
+        const onclick = t.getAttribute('onclick');
+        if (onclick && onclick.includes("'" + tab + "'")) t.classList.add('active');
+    });
+
+    // Update panes
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+    const pane = document.getElementById('pane-' + tab);
+    if (pane) pane.classList.add('active');
+
+    currentTab = tab;
+
+    // Stop existing polling
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+
+    // Load tab data and start polling
+    loadTabData(tab);
+    pollTimer = setInterval(() => loadTabData(tab), 10000);
+}
+
+function loadTabData(tab) {
+    switch (tab) {
+        case 'overview': loadOverview(); break;
+        case 'servers': loadServers(); break;
+        case 'builds': loadBuilds(); break;
+        case 'breadcrumbs': loadBreadcrumbs(); break;
+        case 'reminders': loadReminders(); break;
+        case 'deaddrop': loadDeadDrop(); break;
+        case 'loaf': loadLoaves(); break;
+        case 'skills': renderSkills(); break;
+        // volumes: static tree, no polling needed
+    }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function daysSinceGenesis() {
+    return Math.floor((new Date() - GENESIS) / 86400000);
+}
+
+function formatElapsed(ms) {
+    if (ms < 0) return '0s';
+    const s = Math.floor(ms / 1000);
+    if (s < 60) return s + 's';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + 'm ' + (s % 60) + 's';
+    return Math.floor(m / 60) + 'h ' + (m % 60) + 'm';
+}
+
+function timeAgo(dateStr) {
+    const ms = Date.now() - new Date(dateStr).getTime();
+    if (ms < 0) return 'in ' + formatElapsed(-ms);
+    return formatElapsed(ms) + ' ago';
+}
+
+function formatDue(dateStr) {
+    const ms = new Date(dateStr).getTime() - Date.now();
+    if (ms < 0) return formatElapsed(-ms) + ' overdue';
+    return 'in ' + formatElapsed(ms);
+}
+
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+
+async function safeFetch(url, opts) {
+    try {
+        const res = await fetch(url, opts);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res;
+    } catch (e) {
+        return null;
+    }
+}
+
+// ============================================================
+// OVERVIEW
+// ============================================================
+async function loadOverview() {
+    const days = daysSinceGenesis();
+    document.getElementById('ov-days').textContent = days;
+    document.getElementById('stat-days').textContent = days;
+    document.getElementById('footer-days').textContent = days;
+    document.getElementById('footer-time').textContent = new Date().toLocaleString();
+
+    // Server status grid
+    await checkServerStatus();
+    renderOverviewServers();
+
+    // Quick stats
+    await loadOverviewStats();
+}
+
+async function checkServerStatus() {
+    // Default: all unknown
+    for (const srv of SERVERS) serverStatus[srv] = null;
+
+    // Manager /health returns {servers: {name: 'alive'|'dead'}}
+    try {
+        const res = await safeFetch(API + '/health');
+        if (res) {
+            serverStatus['manager'] = true;
+            const data = await res.json();
+            if (data.servers) {
+                for (const [name, status] of Object.entries(data.servers)) {
+                    // Map server names (health uses binary names like 'browser-mcp')
+                    const srv = name === 'browser-mcp' ? 'browser' : name;
+                    if (SERVERS.includes(srv)) {
+                        serverStatus[srv] = (status === 'alive');
+                    }
+                }
+            }
+            return;
+        }
+    } catch (e) {}
+
+    // Fallback: probe individual HTTP endpoints
+    const probes = [
+        { url: REMINDER_API + '/reminders', servers: ['reminder-rs'] },
+        { url: BC_API + '/breadcrumb/status', servers: ['atlas', 'utonomous'] }
+    ];
+    await Promise.all(probes.map(async (probe) => {
+        try {
+            const res = await safeFetch(probe.url);
+            if (res) { for (const srv of probe.servers) serverStatus[srv] = true; }
+        } catch (e) {}
+    }));
+}
+
+
+function renderOverviewServers() {
+    const el = document.getElementById('overview-servers');
+    el.innerHTML = SERVERS.map(srv => {
+        const up = serverStatus[srv];
+        const dotClass = up === true ? 'up' : (up === false ? 'down' : '');
+        const dotStyle = up === null ? 'background:#555;' : '';
+        return '<div class="srv"><span class="dot ' + dotClass + '" style="' + dotStyle + '"></span><span class="name">' + srv + '</span></div>';
+    }).join('');
+}
+
+async function loadOverviewStats() {
+    // Reminders
+    try {
+        const res = await safeFetch(REMINDER_API + '/reminders');
+        if (res) {
+            const data = await res.json();
+            const count = data.count || (data.reminders ? data.reminders.length : 0);
+            document.getElementById('ov-reminders').textContent = count;
+            document.getElementById('stat-reminders').textContent = count;
+
+            // Show top 3
+            const el = document.getElementById('ov-rem-list');
+            const rems = (data.reminders || []).slice(0, 3);
+            if (rems.length) {
+                el.innerHTML = rems.map(r => {
+                    const overdue = new Date(r.due_at) < new Date();
+                    return '<div style="padding:5px 0;font-size:0.82em;border-bottom:1px solid rgba(255,255,255,0.04);display:flex;justify-content:space-between;">' +
+                        '<span style="color:' + (overdue ? '#ff4444' : '#ccc') + ';">' + esc(r.message.substring(0, 40)) + '</span>' +
+                        '<span style="color:#888;font-size:0.85em;">' + formatDue(r.due_at) + '</span></div>';
+                }).join('');
+            } else {
+                el.innerHTML = '<div style="color:#888;font-size:0.82em;padding:10px;text-align:center;">No active reminders</div>';
+            }
+        }
+    } catch (e) {
+        document.getElementById('ov-rem-list').innerHTML = '<div class="offline">Reminder server offline</div>';
+    }
+
+    // Breadcrumb
+    try {
+        const res = await safeFetch(BC_API + '/breadcrumb/status');
+        if (res) {
+            const data = await res.json();
+            if (data.active || data.operation) {
+                const op = data.active || data.operation || data;
+                const name = op.name || op.operation || 'Active';
+                document.getElementById('ov-breadcrumb').textContent = name.substring(0, 20);
+                document.getElementById('stat-breadcrumb').textContent = 'Active';
+                const el = document.getElementById('ov-bc-detail');
+                const completed = op.steps_completed || op.completed_count || 0;
+                const total = op.total_steps || (op.steps || []).length || 1;
+                const pct = Math.round((completed / total) * 100);
+                el.innerHTML = '<div style="font-weight:600;font-size:0.9em;margin-bottom:6px;">' + esc(name) + '</div>' +
+                    '<div class="pbar"><div class="fill" style="width:' + pct + '%;"></div></div>' +
+                    '<div style="font-size:0.75em;color:#888;">' + completed + '/' + total + ' steps (' + pct + '%)</div>';
+            } else {
+                document.getElementById('stat-breadcrumb').textContent = 'None';
+                document.getElementById('ov-bc-detail').innerHTML = '<div style="color:#888;font-size:0.82em;padding:10px;text-align:center;">No active operation</div>';
+            }
+        }
+    } catch (e) {
+        document.getElementById('ov-bc-detail').innerHTML = '<div class="offline">Breadcrumb server offline</div>';
+    }
+
+    // Loaves count
+    try {
+        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent('C:\\CPC\\data\\loaves'));
+        if (res) {
+            const files = await res.json();
+            const jsonFiles = (Array.isArray(files) ? files : []).filter(f => f.name && f.name.endsWith('.json'));
+            document.getElementById('ov-loaves').textContent = jsonFiles.length;
+            document.getElementById('stat-loaves').textContent = jsonFiles.length;
+        }
+    } catch (e) {}
+}
+
+// ============================================================
+// SERVERS (detailed)
+// ============================================================
+function loadServers() {
+    const el = document.getElementById('servers-content');
+    let html = '<div style="padding:8px 12px;margin-bottom:10px;background:rgba(0,217,255,0.06);border:1px solid rgba(0,217,255,0.15);border-radius:6px;font-size:0.8em;color:#8af;">' +
+        '&#128193; Source: <span style="color:#00ff88;font-family:monospace;">C:\\rust-mcp</span> &mdash; All servers are Rust MCP binaries' +
+        '</div>';
+
+    for (const [tierName, srvList] of Object.entries(SERVER_TIERS)) {
+        html += '<div class="tier-label">' + tierName + '</div>';
+        html += '<div class="grid grid-auto" style="margin-bottom:6px;">';
+        for (const srv of srvList) {
+            const info = SERVER_BINARIES.find(b => b.name === srv) || { name: srv, bin: srv + '.exe', src: '' };
+            const up = serverStatus[srv];
+            const statusBadge = up === true ? '<span class="badge up">Running</span>' : (up === false ? '<span class="badge down">Stopped</span>' : '<span class="badge" style="background:rgba(255,255,255,0.05);color:#666;">Unknown</span>');
+            html += '<div class="srv-card">' +
+                '<div class="srv-name"><span class="dot ' + (up ? 'up' : (up === false ? 'down' : '')) + '" style="' + (up === null ? 'background:#555;' : '') + '"></span>' + info.name + '</div>' +
+                '<div class="srv-meta">Binary: ' + info.bin + '</div>' +
+                (info.src ? '<div class="srv-meta" style="color:#00d9ff;">Source: ' + info.src + '</div>' : '') +
+                '<div class="srv-meta">Path: C:\\CPC\\servers\\' + info.bin + '</div>' +
+                '<div class="srv-status">' + statusBadge + '</div>' +
+                '</div>';
+        }
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
+}
+
+// ============================================================
+// VOLUMES CATALOG
+// ============================================================
+function buildVolTree() {
+    const el = document.getElementById('vol-tree-list');
+    let html = '';
+    let topicCount = 0;
+
+    for (const [catName, items] of Object.entries(CATALOG_CATEGORIES)) {
+        const catId = 'cat-' + catName.replace(/[^a-z]/gi, '');
+        html += '<div class="vol-cat-header" onclick="toggleCat(\'' + catId + '\')">' +
+            '<span class="cat-arrow open" id="arrow-' + catId + '">&#9654;</span> ' + catName + '</div>';
+        html += '<div class="vol-cat-body open" id="' + catId + '">';
+
+        // Check if items are quick-ref files (strings ending in .md) or topic keys
+        for (const item of items) {
+            if (item.endsWith('.md')) {
+                // Quick reference file — render as a direct file link
+                html += '<div class="vol-topic vol-file" draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',\'' + esc(item) + '\')" onclick="loadVolFile(\'' + esc(item) + '\')" ondblclick="event.stopPropagation();openVolFileDialog(\'' + esc(item) + '\')" style="margin:4px 8px;">' +
+                    '<div class="vol-topic-name">' + esc(item) + '</div></div>';
+            } else {
+                const topic = CATALOG_TOPICS[item];
+                if (!topic) continue;
+                topicCount++;
+                const fileCount = topic.files.length;
+                const topicId = 'topic-' + item;
+                html += '<div class="vol-topic" data-topic="' + item + '" data-keywords="' + esc(topic.keywords.join(' ') + ' ' + item) + '">' +
+                    '<div class="vol-topic-name" onclick="toggleTopicFiles(\'' + topicId + '\')">' +
+                    '<span>' + esc(item) + '</span>' +
+                    '<span class="file-count">' + fileCount + '</span></div>' +
+                    '<div class="vol-topic-purpose">' + esc(topic.purpose) + '</div>' +
+                    '<div class="vol-topic-tags">' + topic.keywords.map(k => '<span class="vol-tag">' + esc(k) + '</span>').join('') + '</div>' +
+                    '<div class="vol-topic-files" id="' + topicId + '">' +
+                    (fileCount ? topic.files.map(f => '<div class="vol-file" draggable="true" ondragstart="event.stopPropagation();event.dataTransfer.setData(\'text/plain\',\'' + esc(item + '/' + f) + '\')" onclick="event.stopPropagation();loadVolFile(\'' + esc(item + '/' + f) + '\')" ondblclick="event.stopPropagation();openVolFileDialog(\'' + esc(item + '/' + f) + '\')">' + esc(f) + '</div>').join('') :
+                    '<div style="padding:4px 12px;color:#555;font-size:0.75em;">No files</div>') +
+                    '</div></div>';
+            }
+        }
+        html += '</div>';
+    }
+
+    el.innerHTML = html;
+    document.getElementById('vol-topic-count').textContent = topicCount + ' topics';
+}
+
+function toggleCat(catId) {
+    const body = document.getElementById(catId);
+    const arrow = document.getElementById('arrow-' + catId);
+    if (body) {
+        body.classList.toggle('open');
+        if (arrow) arrow.classList.toggle('open');
+    }
+}
+
+function toggleTopicFiles(topicId) {
+    const el = document.getElementById(topicId);
+    if (el) el.classList.toggle('open');
+}
+
+function filterVolTopics(query) {
+    const q = query.toLowerCase().trim();
+    document.querySelectorAll('.vol-topic').forEach(el => {
+        if (!q) { el.style.display = ''; return; }
+        const kw = (el.dataset.keywords || '').toLowerCase();
+        el.style.display = kw.includes(q) ? '' : 'none';
+    });
+    // Show all categories when filtering
+    if (q) {
+        document.querySelectorAll('.vol-cat-body').forEach(b => b.classList.add('open'));
+        document.querySelectorAll('.cat-arrow').forEach(a => a.classList.add('open'));
+    }
+}
+
+async function loadVolFile(relPath) {
+    const viewer = document.getElementById('vol-content');
+    const title = document.getElementById('vol-title');
+    title.textContent = relPath;
+    viewer.innerHTML = '<div class="placeholder"><div class="icon">&#8987;</div><div>Loading...</div></div>';
+
+    // Highlight active file
+    document.querySelectorAll('.vol-file').forEach(f => f.classList.remove('active'));
+    document.querySelectorAll('.vol-file').forEach(f => {
+        if (f.textContent === relPath.split('/').pop()) f.classList.add('active');
+    });
+
+    const fullPath = VOLUMES_BASE + '/' + relPath;
+
+    try {
+        // Try manager API first
+        let res = await safeFetch(API + '/api/read-file?path=' + encodeURIComponent(fullPath));
+        if (!res) {
+            res = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent(fullPath));
+        }
+
+        if (res) {
+            const text = new TextDecoder('utf-8').decode(await res.arrayBuffer());
+            if (typeof marked !== 'undefined' && relPath.endsWith('.md')) {
+                viewer.innerHTML = marked.parse(text);
+                if (typeof hljs !== 'undefined') viewer.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            } else {
+                viewer.innerHTML = '<pre style="white-space:pre-wrap;color:#ccc;font-size:0.85em;">' + esc(text) + '</pre>';
+                if (typeof hljs !== 'undefined') viewer.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            }
+        } else {
+            throw new Error('unavailable');
+        }
+    } catch (e) {
+        viewer.innerHTML = '<div class="placeholder"><div class="icon" style="color:#ffaa00;">&#128196;</div>' +
+            '<div>File viewer requires manager API</div>' +
+            '<div style="font-size:0.8em;color:#555;margin-top:6px;font-family:Consolas,monospace;">Path: ' + esc(fullPath) + '</div></div>';
+    }
+}
+
+async function openVolFileDialog(relPath) {
+    const overlay = document.getElementById('file-dialog-overlay');
+    const title = document.getElementById('fd-title');
+    const body = document.getElementById('fd-body');
+    title.textContent = relPath;
+    body.innerHTML = '<div style="text-align:center;padding:40px;color:#555;">&#8987; Loading...</div>';
+    overlay.style.display = 'flex';
+
+    const fullPath = VOLUMES_BASE + '/' + relPath;
+    try {
+        let res = await safeFetch(API + '/api/read-file?path=' + encodeURIComponent(fullPath));
+        if (!res) {
+            res = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent(fullPath));
+        }
+        if (res) {
+            const text = new TextDecoder('utf-8').decode(await res.arrayBuffer());
+            if (typeof marked !== 'undefined' && relPath.endsWith('.md')) {
+                body.innerHTML = marked.parse(text);
+            } else {
+                body.innerHTML = '<pre style="white-space:pre-wrap;color:#ccc;">' + esc(text) + '</pre>';
+            }
+            if (typeof hljs !== 'undefined') {
+                body.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+            }
+        } else {
+            throw new Error('unavailable');
+        }
+    } catch (e) {
+        body.innerHTML = '<div style="text-align:center;padding:40px;">' +
+            '<div style="font-size:2em;margin-bottom:12px;">&#128196;</div>' +
+            '<div style="color:#ffaa00;">File loading requires Claude Desktop restart to enable the API endpoint</div>' +
+            '<div style="font-size:0.85em;color:#555;margin-top:8px;font-family:Consolas,monospace;">Path: ' + esc(fullPath) + '</div></div>';
+    }
+}
+
+function closeFileDialog() {
+    document.getElementById('file-dialog-overlay').style.display = 'none';
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeFileDialog();
+});
+
+// ============================================================
+// BUILDS
+// ============================================================
+async function loadBuilds() {
+    // Binary versions table
+    const tbody = document.getElementById('builds-binaries');
+    let rows = '';
+    for (const srv of SERVER_BINARIES) {
+        const up = serverStatus[srv.name];
+        const statusBadge = up === true ? '<span class="badge up">Running</span>' : '<span class="badge down">Stopped</span>';
+        rows += '<tr><td style="font-weight:600;">' + srv.name + '</td><td style="color:#00d9ff;font-family:Consolas,monospace;">' + srv.bin + '</td>' +
+            '<td style="color:#666;font-size:0.85em;">C:\\CPC\\servers\\' + srv.bin + '</td><td>' + statusBadge + '</td></tr>';
+    }
+    tbody.innerHTML = rows;
+
+    // Build history from backups
+    const histEl = document.getElementById('builds-history');
+    try {
+        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent('C:\\CPC\\backups'));
+        if (res) {
+            const files = await res.json();
+            const exeFiles = (Array.isArray(files) ? files : [])
+                .filter(f => f.name && f.name.endsWith('.exe'))
+                .sort((a, b) => (b.modified || '').localeCompare(a.modified || ''));
+
+            if (exeFiles.length) {
+                let html = '<table><thead><tr><th>File</th><th>Size</th><th>Date</th></tr></thead><tbody>';
+                for (const f of exeFiles.slice(0, 30)) {
+                    const size = f.size ? (f.size > 1048576 ? (f.size / 1048576).toFixed(1) + ' MB' : (f.size / 1024).toFixed(0) + ' KB') : '--';
+                    const date = f.modified ? new Date(f.modified).toLocaleDateString() : '--';
+                    html += '<tr><td style="font-family:Consolas,monospace;color:#00d9ff;">' + esc(f.name) + '</td><td>' + size + '</td><td style="color:#888;">' + date + '</td></tr>';
+                }
+                html += '</tbody></table>';
+                histEl.innerHTML = html;
+            } else {
+                histEl.innerHTML = '<div class="offline">No backup .exe files found</div>';
+            }
+        } else {
+            throw new Error('offline');
+        }
+    } catch (e) {
+        // Try build history API
+        try {
+            const res = await safeFetch('http://localhost:8001/api/builds/history?days=30&limit=20');
+            if (res) {
+                const data = await res.json();
+                const builds = data.builds || [];
+                if (builds.length) {
+                    histEl.innerHTML = builds.map(b => {
+                        const date = b.started_at ? new Date(b.started_at).toLocaleDateString() : '--';
+                        const dur = b.duration_seconds ? (b.duration_seconds > 60 ? Math.round(b.duration_seconds / 60) + 'm' : Math.round(b.duration_seconds) + 's') : '';
+                        return '<div style="padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:4px;margin-bottom:4px;font-size:0.82em;display:flex;justify-content:space-between;">' +
+                            '<span style="font-weight:600;">' + esc(b.name || 'Build') + '</span>' +
+                            '<span style="color:#888;">' + date + (dur ? ' - ' + dur : '') + '</span></div>';
+                    }).join('');
+                } else {
+                    histEl.innerHTML = '<div class="offline">No recent builds</div>';
+                }
+            } else {
+                histEl.innerHTML = '<div class="offline">Build history endpoint unavailable</div>';
+            }
+        } catch (e2) {
+            histEl.innerHTML = '<div class="offline">Build history endpoint unavailable</div>';
+        }
+    }
+}
+
+// ============================================================
+// BREADCRUMBS
+// ============================================================
+async function loadBreadcrumbs() {
+    const activeEl = document.getElementById('bc-active');
+    const historyEl = document.getElementById('bc-history');
+
+    try {
+        const res = await safeFetch(BC_API + '/breadcrumb/status');
+        if (!res) throw new Error('offline');
+        const data = await res.json();
+
+        if (data.active || data.operation) {
+            const op = data.active || data.operation || data;
+            const steps = op.steps || op.plan || [];
+            const completed = op.steps_completed || op.completed_count || 0;
+            const total = op.total_steps || steps.length || 1;
+            const pct = Math.round((completed / total) * 100);
+            const startTime = op.started_at ? new Date(op.started_at) : null;
+            const elapsed = startTime ? formatElapsed(Date.now() - startTime.getTime()) : '';
+            const context = op.context || op.description || '';
+
+            activeEl.innerHTML = '<div style="font-weight:700;font-size:1em;margin-bottom:6px;">' + esc(op.name || op.operation || 'Active Operation') + '</div>' +
+                (context ? '<div style="font-size:0.8em;color:#999;margin-bottom:8px;">' + esc(context) + '</div>' : '') +
+                '<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">' +
+                '<div class="pbar" style="flex:1;"><div class="fill" style="width:' + pct + '%;"></div></div>' +
+                '<span style="font-size:0.78em;color:#888;">' + completed + '/' + total + '</span>' +
+                (elapsed ? '<span style="font-size:0.75em;color:#ffaa00;">&#9201; ' + elapsed + '</span>' : '') +
+                '</div>' +
+                steps.map((s, i) => {
+                    const name = typeof s === 'string' ? s : (s.description || s.name || '');
+                    if (i < completed) return '<div class="bc-step done">&#10003; ' + esc(name) + '</div>';
+                    if (i === completed) return '<div class="bc-step current">&#9654; ' + esc(name) + '</div>';
+                    return '<div class="bc-step pending">&#9675; ' + esc(name) + '</div>';
+                }).join('');
+        } else {
+            activeEl.innerHTML = '<div style="color:#888;font-size:0.82em;padding:16px;text-align:center;">No active breadcrumb operation</div>';
+        }
+
+        // History
+        try {
+            const hRes = await safeFetch(BC_API + '/breadcrumb/history');
+            if (hRes) {
+                const hData = await hRes.json();
+                const ops = hData.operations || hData.history || [];
+                if (ops.length) {
+                    historyEl.innerHTML = ops.map(op => {
+                        const icon = (op.status === 'aborted' || op.status === 'abandoned') ? '&#10060;' : '&#9989;';
+                        const date = op.started_at ? new Date(op.started_at).toLocaleString() : '--';
+                        const dur = op.duration_seconds ? (op.duration_seconds > 60 ? Math.round(op.duration_seconds / 60) + 'm' : Math.round(op.duration_seconds) + 's') : '';
+                        return '<div style="padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:4px;margin-bottom:4px;">' +
+                            '<div style="font-weight:600;font-size:0.85em;">' + icon + ' ' + esc(op.name || op.operation || 'Operation') + '</div>' +
+                            '<div style="font-size:0.75em;color:#888;margin-top:2px;">' + date + (dur ? ' - ' + dur : '') + ' - ' + (op.steps_completed || '?') + ' steps</div>' +
+                            (op.summary ? '<div style="font-size:0.78em;color:#aaa;margin-top:4px;">' + esc(op.summary) + '</div>' : '') +
+                            '</div>';
+                    }).join('');
+                } else {
+                    historyEl.innerHTML = '<div class="offline">No breadcrumb history</div>';
+                }
+            }
+        } catch (e) {}
+    } catch (e) {
+        activeEl.innerHTML = '<div class="offline">Breadcrumb server offline</div>';
+        historyEl.innerHTML = '';
+    }
+}
+
+// ============================================================
+// REMINDERS
+// ============================================================
+async function loadReminders() {
+    const listEl = document.getElementById('rem-list');
+    const countEl = document.getElementById('rem-count');
+
+    try {
+        const res = await safeFetch(REMINDER_API + '/reminders');
+        if (!res) throw new Error('offline');
+        const data = await res.json();
+        const rems = data.reminders || [];
+        const count = data.count || rems.length;
+        countEl.textContent = '(' + count + ' active)';
+
+        if (!rems.length) {
+            listEl.innerHTML = '<div style="color:#888;font-size:0.82em;padding:16px;text-align:center;">No active reminders</div>';
+            return;
+        }
+
+        const now = new Date();
+        rems.sort((a, b) => new Date(a.due_at) - new Date(b.due_at));
+
+        listEl.innerHTML = rems.map(r => {
+            const due = new Date(r.due_at);
+            const overdue = due < now;
+            const soon = !overdue && (due - now) < 3600000;
+            const cls = overdue ? 'overdue' : (soon ? 'soon' : '');
+            const safeId = esc(r.id);
+            return '<div class="rem-item ' + cls + '">' +
+                '<span style="font-size:1.1em;">' + (overdue ? '&#9888;' : (r.type === 'recurring' ? '&#128260;' : '&#9200;')) + '</span>' +
+                '<div class="rem-msg">' +
+                '<div style="font-weight:500;">' + esc(r.message) + '</div>' +
+                '<div style="font-size:0.78em;color:#888;margin-top:2px;">' + (r.type || 'one-time') + ' &bull; ' + formatDue(r.due_at) + '</div>' +
+                '</div>' +
+                '<div class="rem-due" style="color:' + (overdue ? '#ff4444' : (soon ? '#ffcc00' : '#00ff88')) + ';">' + new Date(r.due_at).toLocaleString() + '</div>' +
+                '<div class="rem-actions">' +
+                '<button class="btn btn-green" onclick="completeReminder(\'' + safeId + '\')">&#10003;</button>' +
+                '<button class="btn btn-red" onclick="deleteReminder(\'' + safeId + '\')">&#10005;</button>' +
+                '</div></div>';
+        }).join('');
+    } catch (e) {
+        countEl.textContent = '(offline)';
+        listEl.innerHTML = '<div class="offline">Reminder server offline</div>';
+    }
+}
+
+async function completeReminder(id) {
+    await safeFetch(REMINDER_API + '/complete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: id }) });
+    loadReminders();
+}
+
+async function deleteReminder(id) {
+    await safeFetch(REMINDER_API + '/delete/' + id, { method: 'DELETE' });
+    loadReminders();
+}
+
+// ============================================================
+// DEAD DROP
+// ============================================================
+async function loadDeadDrop() {
+    const el = document.getElementById('dd-messages');
+
+    try {
+        const res = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent('C:\\CPC\\data\\dead_drop.json'));
+        if (res) {
+            ddData = await res.json();
+            if (!Array.isArray(ddData)) ddData = ddData.messages || [];
+        } else {
+            // Try manager API
+            const res2 = await safeFetch(API + '/api/dead-drop');
+            if (res2) {
+                ddData = await res2.json();
+                if (!Array.isArray(ddData)) ddData = ddData.messages || [];
+            } else {
+                throw new Error('offline');
+            }
+        }
+    } catch (e) {
+        ddData = [];
+        el.innerHTML = '<div class="offline">Dead drop endpoint unavailable</div>';
+        return;
+    }
+
+    renderDeadDrop();
+}
+
+function renderDeadDrop() {
+    const el = document.getElementById('dd-messages');
+    if (!ddData.length) {
+        el.innerHTML = '<div style="color:#888;font-size:0.82em;padding:16px;text-align:center;">No messages</div>';
+        return;
+    }
+
+    const unread = ddData.filter(m => !m.read);
+    const read = ddData.filter(m => m.read);
+    let html = '';
+
+    if (unread.length) {
+        html += '<div style="font-size:0.72em;color:#00ff88;font-weight:600;margin-bottom:6px;">UNREAD (' + unread.length + ')</div>';
+        html += unread.map((m, i) => renderDDMsg(m, ddData.indexOf(m), false)).join('');
+    }
+    if (read.length) {
+        html += '<div style="font-size:0.72em;color:#666;font-weight:600;margin:12px 0 6px;">READ (' + read.length + ')</div>';
+        html += read.map((m, i) => renderDDMsg(m, ddData.indexOf(m), true)).join('');
+    }
+
+    el.innerHTML = html;
+}
+
+function renderDDMsg(m, idx, isRead) {
+    return '<div class="dd-msg ' + (isRead ? '' : 'unread') + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<div><span class="dd-from">' + esc(m.from || 'system') + '</span>' +
+        '<span class="dd-status ' + (isRead ? 'read' : 'unread') + '">' + (isRead ? 'READ' : 'UNREAD') + '</span></div>' +
+        '<span class="dd-time">' + (m.timestamp ? new Date(m.timestamp).toLocaleString() : '--') + '</span></div>' +
+        '<div class="dd-body">' + esc(m.message || '') + '</div>' +
+        (!isRead ? '<button class="btn btn-blue" onclick="markDDRead(' + idx + ')" style="margin-top:6px;">Mark Read</button>' : '') +
+        '</div>';
+}
+
+function markDDRead(idx) {
+    if (idx >= 0 && idx < ddData.length) {
+        ddData[idx].read = true;
+        renderDeadDrop();
+        saveDeadDrop();
+    }
+}
+
+function markAllDDRead() {
+    ddData.forEach(m => m.read = true);
+    renderDeadDrop();
+    saveDeadDrop();
+}
+
+function clearAllDD() {
+    ddData = ddData.filter(m => !m.read);
+    renderDeadDrop();
+    saveDeadDrop();
+}
+
+async function saveDeadDrop() {
+    await safeFetch(LOCAL_API + '/files/write?path=' + encodeURIComponent('C:\\CPC\\data\\dead_drop.json'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ddData)
+    });
+}
+
+// ============================================================
+// LOAF
+// ============================================================
+async function loadLoaves() {
+    const activeEl = document.getElementById('loaf-active');
+    const archivedEl = document.getElementById('loaf-archived');
+
+    try {
+        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent('C:\\CPC\\data\\loaves'));
+        if (!res) throw new Error('offline');
+
+        const files = await res.json();
+        const jsonFiles = (Array.isArray(files) ? files : []).filter(f => f.name && f.name.endsWith('.json'));
+
+        if (!jsonFiles.length) {
+            activeEl.innerHTML = '<div class="offline">No loaf files found</div>';
+            return;
+        }
+
+        const loaves = [];
+        for (const f of jsonFiles) {
+            try {
+                const r2 = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent('C:\\CPC\\data\\loaves\\' + f.name));
+                if (r2) {
+                    const loaf = await r2.json();
+                    loaf._filename = f.name;
+                    loaves.push(loaf);
+                }
+            } catch (e) {}
+        }
+
+        const active = loaves.filter(l => l.status === 'active' || l.status === 'in_progress');
+        const archived = loaves.filter(l => l.status === 'completed' || l.status === 'done' || l.status === 'archived');
+        const other = loaves.filter(l => !active.includes(l) && !archived.includes(l));
+
+        activeEl.innerHTML = renderLoafCards([...active, ...other]);
+        archivedEl.innerHTML = archived.length ? renderLoafCards(archived) : '<div class="offline">No archived loaves</div>';
+
+        document.getElementById('stat-loaves').textContent = active.length;
+    } catch (e) {
+        activeEl.innerHTML = '<div class="offline">Loaf endpoint unavailable</div>';
+    }
+}
+
+function renderLoafCards(loaves) {
+    if (!loaves.length) return '<div class="offline">No loaves</div>';
+
+    return loaves.map(l => {
+        const tasks = l.tasks || [];
+        const done = tasks.filter(t => t.status === 'done').length;
+        const pct = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
+        const isActive = l.status === 'active' || l.status === 'in_progress';
+        const detailId = 'loaf-' + (l._filename || '').replace(/[^a-z0-9]/gi, '');
+
+        let detail = '';
+        // Tasks
+        if (tasks.length) {
+            detail += '<div style="font-size:0.72em;color:#888;font-weight:600;margin-bottom:4px;">TASKS</div>';
+            detail += tasks.map(t => {
+                const icon = t.status === 'done' ? '&#10003;' : (t.status === 'in_progress' ? '&#9654;' : '&#9675;');
+                const cls = t.status === 'done' ? 'done' : (t.status === 'in_progress' ? 'current' : 'pending');
+                return '<div class="loaf-task ' + cls + '">' + icon + ' ' + esc(t.name || t.description || '') + '</div>';
+            }).join('');
+        }
+        // Decisions
+        if (l.decisions && l.decisions.length) {
+            detail += '<div style="font-size:0.72em;color:#888;font-weight:600;margin-top:8px;">DECISIONS (' + l.decisions.length + ')</div>';
+            detail += l.decisions.map(d => '<div style="font-size:0.78em;color:#ffaa00;padding:2px 8px;">&#8226; ' + esc(d) + '</div>').join('');
+        }
+        // Discoveries
+        if (l.discoveries && l.discoveries.length) {
+            detail += '<div style="font-size:0.72em;color:#888;font-weight:600;margin-top:8px;">DISCOVERIES (' + l.discoveries.length + ')</div>';
+            detail += l.discoveries.map(d => '<div style="font-size:0.78em;color:#00ff88;padding:2px 8px;">&#128161; ' + esc(d) + '</div>').join('');
+        }
+        // Next actions
+        if (l.next_actions && l.next_actions.length) {
+            detail += '<div style="font-size:0.72em;color:#888;font-weight:600;margin-top:8px;">NEXT ACTIONS</div>';
+            detail += l.next_actions.map(a => '<div style="font-size:0.78em;color:#00d9ff;padding:2px 8px;">&#10145; ' + esc(a) + '</div>').join('');
+        }
+
+        return '<div class="loaf-card ' + (isActive ? 'active-loaf' : '') + '" onclick="document.getElementById(\'' + detailId + '\').classList.toggle(\'show\')">' +
+            '<div class="loaf-header"><span class="loaf-goal">' + esc(l.goal || l._filename || 'Untitled') + '</span>' +
+            '<span class="badge ' + (isActive ? 'active' : 'up') + '">' + (l.status || 'unknown') + '</span></div>' +
+            '<div class="loaf-phase">Phase: ' + esc(l.phase || 'unknown') + '</div>' +
+            '<div style="display:flex;justify-content:space-between;font-size:0.72em;color:#888;margin-top:4px;"><span>Tasks: ' + done + '/' + tasks.length + '</span><span>' + pct + '%</span></div>' +
+            '<div class="pbar"><div class="fill" style="width:' + pct + '%;"></div></div>' +
+            '<div class="loaf-detail" id="' + detailId + '">' + detail + '</div></div>';
+    }).join('');
+}
+
+// ============================================================
+// SKILLS
+// ============================================================
+function renderSkills() {
+    const el = document.getElementById('skills-list');
+    el.innerHTML = SKILLS.map(s =>
+        '<div class="skill-item"><div class="sk-name">' + esc(s.name) + '</div><div class="sk-desc">' + esc(s.desc) + '</div></div>'
+    ).join('');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+    const days = daysSinceGenesis();
+    document.getElementById('stat-days').textContent = days;
+    document.getElementById('footer-days').textContent = days;
+    document.getElementById('footer-time').textContent = new Date().toLocaleString();
+
+    // Build volumes tree
+    buildVolTree();
+
+    // Render skills (static)
+    renderSkills();
+
+    // Load overview
+    showTab('overview');
+}
+
+init();
+</script>
+</body>
+</html>
