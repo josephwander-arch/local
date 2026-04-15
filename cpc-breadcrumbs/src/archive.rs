@@ -2,11 +2,17 @@ use std::path::PathBuf;
 use crate::schema::Breadcrumb;
 use crate::error::BreadcrumbError;
 
+/// Resolve the Volumes archive base path.
+///
+/// Uses cpc_paths::volumes_path() for the full resolution chain:
+///   cache → VOLUMES_PATH env var → config → auto-detect → error
+///
+/// Falls back to the hardcoded Windows default if resolution fails,
+/// so the breadcrumb system never hard-crashes due to path resolution.
 fn archive_base() -> PathBuf {
-    if let Ok(v) = std::env::var("VOLUMES_PATH") {
-        return PathBuf::from(v).join("breadcrumbs").join("completed");
-    }
-    PathBuf::from(r"C:\My Drive\Volumes\breadcrumbs\completed")
+    cpc_paths::volumes_path()
+        .map(|v| v.join("breadcrumbs").join("completed"))
+        .unwrap_or_else(|_| PathBuf::from(r"C:\My Drive\Volumes\breadcrumbs\completed"))
 }
 
 /// Archive a breadcrumb to `{archive_base}/{YYYY-MM-DD}/bc_{id}.json`.

@@ -2,6 +2,11 @@
 
 All notable changes to the local MCP server are documented here.
 
+## [Unreleased]
+
+### Changed
+- `cpc-breadcrumbs` dependency updated: Volumes archive path now resolved via `cpc_paths::volumes_path()` instead of `VOLUMES_PATH` env var direct lookup. Falls back to hardcoded default if resolution fails — no behavior change for existing installs.
+
 ## [1.2.8] - 2026-04-15 — Stage C-A: cpc-paths integration + local_health tool
 
 ### Added
