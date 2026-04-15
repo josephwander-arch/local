@@ -2,6 +2,18 @@
 
 All notable changes to the local MCP server are documented here.
 
+## [1.2.5] - 2026-04-15 — Post-v1.2.2 Monorepo Sync
+
+### Changed
+- **`src/tools/session.rs`** — session tool improvements; removed session_new/session_old intermediates, consolidated into final implementation
+- **`src/tools/mod.rs`** — module registry updated for final session/shortcuts/smart tool set
+- **`src/tools/shortcuts.rs`** — shortcut_chain and shortcut_run improvements
+- **`src/tools/smart.rs`** — smart_exec / smart_read updates
+- **`src/main.rs`** — tool registration + NAV index updated
+- **11 additional tool files** (auto_backup, breadcrumbs, git, log, planner, psession, registry, sqlite, toc, vision, wsl) — accumulated monorepo fixes and stability improvements
+- `Cargo.toml`: version bumped to `1.2.5` (post-v1.2.2 unified baseline, pre-CI)
+- `windows.rs` removed (consolidated into other modules)
+
 ## [1.2.1] - 2026-04-15 — Phase C Fix3
 
 ### Changed

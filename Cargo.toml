@@ -1,6 +1,6 @@
 [package]
 name = "local"
-version = "0.1.0"
+version = "1.2.5"
 edition = "2021"
 description = "Windows MCP - Raw tools + Windows automation for Claude Desktop"
 
