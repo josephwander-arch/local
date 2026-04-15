@@ -2,6 +2,12 @@
 
 All notable changes to the local MCP server are documented here.
 
+## [1.2.1] - 2026-04-15 — Phase C Fix3
+
+### Changed
+- **Shared dependency updates** — aligned with workspace-wide Cargo.toml changes from Phase C fix3 cycle
+- **Breadcrumb and session tools** — minor stability improvements from monorepo integration
+
 ## [1.1.1] - 2026-04-11
 
 ### Added — Breadcrumb Operation Tracking Subsystem
