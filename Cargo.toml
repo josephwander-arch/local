@@ -1,6 +1,6 @@
 [package]
 name = "local"
-version = "1.2.7"
+version = "1.2.8"
 edition = "2021"
 description = "Windows MCP - Raw tools + Windows automation for Claude Desktop"
 
@@ -17,6 +17,7 @@ uuid = { version = "1.6", features = ["v4"] }  # for unique markers in persisten
 base64 = "0.21"  # for transform_base64_* tools
 rusqlite = { version = "0.29", features = ["bundled"] }
 cpc-breadcrumbs = { path = "cpc-breadcrumbs" }
+cpc-paths = { git = "https://github.com/josephwander-arch/cpc-paths", tag = "v0.1.0" }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"

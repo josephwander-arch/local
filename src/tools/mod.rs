@@ -99,7 +99,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
     if name.starts_with("git_") {
         return git::execute(name, args);
     }
-    if name.starts_with("server_") || name.starts_with("tool_fallback") || name.starts_with("preflight_") {
+    if name == "local_health" || name.starts_with("server_") || name.starts_with("tool_fallback") || name.starts_with("preflight_") {
         return health::execute(name, args);
     }    // Standalone tools in raw module
     if name == "run" || name == "chain" || name == "read_file" || name == "read"

@@ -1,10 +1,58 @@
 //! Server health, tool fallback, and deploy preflight
 //! Reads tool_fallback_map.json for cross-server awareness
 
+use chrono;
 use serde_json::{json, Value};
 use std::process::Command;
 
 const FALLBACK_MAP_PATH: &str = "C:\\My Drive\\Volumes\\system_architecture\\tool_fallback_map.json";
+
+// ── local_health helpers ───────────────────────────────────────────────────────
+
+/// Count entries in the active breadcrumb index.
+fn count_active_breadcrumbs() -> usize {
+    let path = r"C:\CPC\state\breadcrumbs\active.index.json";
+    let content = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return 0,
+    };
+    serde_json::from_str::<serde_json::Value>(&content)
+        .ok()
+        .and_then(|v| v.as_array().map(|a| a.len()))
+        .unwrap_or(0)
+}
+
+/// Count archived breadcrumbs completed today.
+fn count_archive_today() -> usize {
+    let today = chrono::Local::now().format("%Y-%m-%d").to_string();
+    let dir = format!(r"C:\My Drive\Volumes\breadcrumbs\completed\{}", today);
+    std::fs::read_dir(&dir)
+        .map(|entries| entries.filter_map(|e| e.ok()).count())
+        .unwrap_or(0)
+}
+
+/// Diagnostic health check for the local server.
+fn local_health() -> Value {
+    let paths = serde_json::to_value(cpc_paths::health_check())
+        .unwrap_or_else(|e| json!({"error": format!("serialize: {}", e)}));
+
+    let active_breadcrumbs = count_active_breadcrumbs();
+    let archive_today = count_archive_today();
+    let session_count = super::session::active_count();
+
+    json!({
+        "server": "local",
+        "version": "1.2.8",
+        "paths": paths,
+        "breadcrumbs": {
+            "active_count": active_breadcrumbs,
+            "archive_today_count": archive_today
+        },
+        "sessions": {
+            "active_count": session_count
+        }
+    })
+}
 
 /// Check if a process is running by name
 fn is_process_running(name: &str) -> bool {
@@ -30,6 +78,14 @@ fn load_fallback_map() -> Result<Value, String> {
 
 pub fn get_definitions() -> Vec<Value> {
     vec![
+        json!({
+            "name": "local_health",
+            "description": "Diagnostic health check for the local server. Returns cpc-paths path resolution status (Volumes, install, backups), active breadcrumb count, archive count for today, and active session count.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {}
+            }
+        }),
         json!({
             "name": "server_health",
             "description": "Check which MCP servers are alive. Returns process status for all registered servers.",
@@ -77,6 +133,8 @@ pub fn get_definitions() -> Vec<Value> {
 
 pub fn execute(name: &str, args: &Value) -> Value {
     match name {
+        "local_health" => local_health(),
+
         "server_health" => {
             let map = match load_fallback_map() {
                 Ok(m) => m,
@@ -270,5 +328,70 @@ pub fn execute(name: &str, args: &Value) -> Value {
         },
 
         _ => json!({"error": format!("Unknown health tool: {}", name)}),
+    }
+}
+
+// ============ TESTS ============
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_local_health_shape() {
+        let result = local_health();
+
+        assert_eq!(result["server"], "local", "server field must be 'local'");
+        assert_eq!(result["version"], "1.2.8", "version must be '1.2.8'");
+        assert!(result.get("paths").is_some(), "paths field must be present");
+        assert!(result.get("breadcrumbs").is_some(), "breadcrumbs field must be present");
+        assert!(result.get("sessions").is_some(), "sessions field must be present");
+    }
+
+    #[test]
+    fn test_local_health_paths_fields() {
+        let result = local_health();
+        let paths = &result["paths"];
+
+        // HealthReport fields from cpc-paths
+        assert!(paths.get("platform").is_some(), "paths.platform must be present");
+        assert!(paths.get("crate_version").is_some(), "paths.crate_version must be present");
+        assert!(paths.get("volumes").is_some(), "paths.volumes must be present");
+        assert!(paths.get("install").is_some(), "paths.install must be present");
+        assert!(paths.get("backups").is_some(), "paths.backups must be present");
+    }
+
+    #[test]
+    fn test_local_health_breadcrumb_counts_are_numeric() {
+        let result = local_health();
+        let bc = &result["breadcrumbs"];
+
+        assert!(
+            bc["active_count"].is_u64() || bc["active_count"].is_i64(),
+            "breadcrumbs.active_count must be numeric"
+        );
+        assert!(
+            bc["archive_today_count"].is_u64() || bc["archive_today_count"].is_i64(),
+            "breadcrumbs.archive_today_count must be numeric"
+        );
+    }
+
+    #[test]
+    fn test_local_health_sessions_count_numeric() {
+        let result = local_health();
+        let sessions = &result["sessions"];
+
+        assert!(
+            sessions["active_count"].is_u64() || sessions["active_count"].is_i64(),
+            "sessions.active_count must be numeric"
+        );
+    }
+
+    #[test]
+    fn test_local_health_via_execute() {
+        // Verify execute() routing reaches local_health
+        let result = execute("local_health", &json!({}));
+        assert_eq!(result["server"], "local", "execute('local_health') must reach local_health()");
+        assert!(result.get("error").is_none(), "execute('local_health') must not return error");
     }
 }

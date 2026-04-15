@@ -20,8 +20,13 @@ use std::os::windows::process::CommandExt;
 const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 // Session storage
-static SESSIONS: Lazy<Arc<Mutex<HashMap<String, PersistentSession>>>> = 
+static SESSIONS: Lazy<Arc<Mutex<HashMap<String, PersistentSession>>>> =
     Lazy::new(|| Arc::new(Mutex::new(HashMap::new())));
+
+/// Return the number of currently active in-memory sessions.
+pub fn active_count() -> usize {
+    SESSIONS.lock().map(|s| s.len()).unwrap_or(0)
+}
 
 struct PersistentSession {
     name: String,

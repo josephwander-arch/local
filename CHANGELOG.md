@@ -2,6 +2,13 @@
 
 All notable changes to the local MCP server are documented here.
 
+## [1.2.8] - 2026-04-15 — Stage C-A: cpc-paths integration + local_health tool
+
+### Added
+- **`local_health` MCP tool** — diagnostic health check exposing `cpc_paths::health_check()` (path resolution status for Volumes, install, backups), active breadcrumb count, today's archived breadcrumb count, and active session count.
+- **`cpc-paths` dependency** (v0.1.0) — portable path discovery library. Pinned to git tag for reproducibility.
+- `session::active_count()` — public helper returning in-memory session count (used by `local_health`).
+
 ## [1.2.7] - 2026-04-15 — Stage A+++: identity detection fixes + breadcrumb_adopt/breadcrumb_list
 
 ### Fixed
