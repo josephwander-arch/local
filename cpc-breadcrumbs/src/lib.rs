@@ -49,13 +49,25 @@ impl WriterContext {
     pub fn from_env() -> Self {
         WriterContext {
             actor: std::env::var("CPC_ACTOR").unwrap_or_else(|_| "unknown".to_string()),
-            machine: std::env::var("COMPUTERNAME")
-                .or_else(|_| std::env::var("HOSTNAME"))
-                .unwrap_or_else(|_| "unknown".to_string())
-                .to_lowercase(),
+            machine: machine_name(),
             session: std::env::var("CPC_SESSION_ID").unwrap_or_else(|_| "session_0".to_string()),
         }
     }
+}
+
+// ── Machine name detection ─────────────────────────────────────────────────────
+
+/// Resolve hostname using env vars with syscall fallback.
+/// Priority: COMPUTERNAME → HOSTNAME → hostname::get() → "unknown"
+pub fn machine_name() -> String {
+    std::env::var("COMPUTERNAME")
+        .or_else(|_| std::env::var("HOSTNAME"))
+        .unwrap_or_else(|_| {
+            hostname::get()
+                .map(|h| h.to_string_lossy().to_string())
+                .unwrap_or_else(|_| "unknown".to_string())
+        })
+        .to_lowercase()
 }
 
 // ── Server init (call from main) ───────────────────────────────────────────────

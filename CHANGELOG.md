@@ -2,6 +2,29 @@
 
 All notable changes to the local MCP server are documented here.
 
+## [1.2.7] - 2026-04-15 — Stage A+++: identity detection fixes + breadcrumb_adopt/breadcrumb_list
+
+### Fixed
+- **Identity detection: no more codex bias** — `set_from_initialize()` now overrides
+  stale state-derived actor with live `clientInfo.name` from the MCP initialize
+  handshake. Claude Desktop (`clientInfo.name = "claude-ai"`) now correctly resolves
+  to `actor = "claude"` instead of reading the previous session's `"codex"` value
+  from `CPC_STATE.json`.
+- **Hostname fallback for `writer_machine`** — Added `hostname = "0.4"` to
+  `cpc-breadcrumbs`. New `machine_name()` helper uses
+  `COMPUTERNAME → HOSTNAME → hostname::get()` syscall → `"unknown"` (true last resort).
+  `local_ctx()` now calls `cpc_breadcrumbs::machine_name()` instead of bare env var.
+- **Session ID no longer stale** — Both `local` and `autonomous` now generate a
+  per-process startup session ID (`sess_{server}_{pid}_{unix_ts}`) via `OnceLock`.
+  State-derived session IDs (previous agent's session string) are replaced on startup.
+  Override: set `CPC_SESSION_ID` env var.
+
+### Added
+- **`breadcrumb_adopt`** — Reassign ownership of a breadcrumb to the current actor.
+  Available in both `local` and `autonomous` servers.
+- **`breadcrumb_list`** — List breadcrumbs from archive by scope (`active`/`today`/`week`/`all`).
+  Available in both `local` and `autonomous` servers.
+
 ## [1.2.6] - 2026-04-15 — Stage A++: cpc-breadcrumbs shared crate
 
 ### Added

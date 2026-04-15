@@ -12,16 +12,36 @@
 use chrono::Local;
 use serde_json::{json, Value};
 use cpc_breadcrumbs::WriterContext;
+use std::sync::OnceLock;
+
+// ── Per-process startup session ID ─────────────────────────────────────────────
+
+static STARTUP_SESSION_ID: OnceLock<String> = OnceLock::new();
+
+fn startup_session_id() -> &'static str {
+    STARTUP_SESSION_ID.get_or_init(|| {
+        if let Ok(v) = std::env::var("CPC_SESSION_ID") {
+            let v = v.trim().to_string();
+            if !v.is_empty() {
+                return v;
+            }
+        }
+        let pid = std::process::id();
+        let ts = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+        format!("sess_local_{}_{}", pid, ts)
+    })
+}
 
 // ── Identity ───────────────────────────────────────────────────────────────────
 
 fn local_ctx() -> WriterContext {
     WriterContext::new(
         std::env::var("CPC_ACTOR").unwrap_or_else(|_| "local".to_string()),
-        std::env::var("COMPUTERNAME")
-            .unwrap_or_else(|_| "unknown".to_string())
-            .to_lowercase(),
-        std::env::var("CPC_SESSION_ID").unwrap_or_else(|_| "session_local".to_string()),
+        cpc_breadcrumbs::machine_name(),
+        std::env::var("CPC_SESSION_ID").unwrap_or_else(|_| startup_session_id().to_string()),
     )
 }
 
@@ -151,6 +171,24 @@ fn breadcrumb_status(_args: &Value) -> Value {
 fn breadcrumb_backup(args: &Value) -> Value {
     let breadcrumb_id = args.get("breadcrumb_id").and_then(|v| v.as_str());
     cpc_breadcrumbs::backup(breadcrumb_id)
+        .unwrap_or_else(|e| json!({ "error": e.to_string() }))
+}
+
+fn breadcrumb_adopt(args: &Value) -> Value {
+    let breadcrumb_id = match args.get("breadcrumb_id").and_then(|v| v.as_str()) {
+        Some(id) => id,
+        None => return json!({ "error": "breadcrumb_id is required" }),
+    };
+    let ctx = local_ctx();
+    match cpc_breadcrumbs::adopt(breadcrumb_id, &ctx) {
+        Ok(v) => v,
+        Err(e) => json!({ "error": e.to_string() }),
+    }
+}
+
+fn breadcrumb_list(args: &Value) -> Value {
+    let scope = args.get("scope").and_then(|v| v.as_str());
+    cpc_breadcrumbs::list(scope)
         .unwrap_or_else(|e| json!({ "error": e.to_string() }))
 }
 
@@ -302,6 +340,28 @@ pub fn get_definitions() -> Vec<Value> {
             }
         }),
         json!({
+            "name": "breadcrumb_adopt",
+            "description": "Reassign ownership of a breadcrumb to the current actor. Use when picking up an operation abandoned by another session.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "breadcrumb_id": { "type": "string", "description": "ID of the breadcrumb to adopt" }
+                },
+                "required": ["breadcrumb_id"]
+            }
+        }),
+        json!({
+            "name": "breadcrumb_list",
+            "description": "List breadcrumbs from archive by scope.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "scope": { "type": "string", "description": "active | today | week | all. Default: today" }
+                },
+                "required": []
+            }
+        }),
+        json!({
             "name": "breadcrumb_clear",
             "description": "Clear local active breadcrumb state. Does NOT touch Drive archives.",
             "inputSchema": {
@@ -324,6 +384,8 @@ pub fn execute(name: &str, args: &Value) -> Value {
         "breadcrumb_abort"    => breadcrumb_abort(args),
         "breadcrumb_status"   => breadcrumb_status(args),
         "breadcrumb_backup"   => breadcrumb_backup(args),
+        "breadcrumb_adopt"    => breadcrumb_adopt(args),
+        "breadcrumb_list"     => breadcrumb_list(args),
         "breadcrumb_clear"    => breadcrumb_clear(args),
         _ => json!({ "error": format!("Unknown breadcrumb tool: {}", name) }),
     }
