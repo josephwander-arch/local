@@ -2,6 +2,44 @@
 
 All notable changes to the local MCP server are documented here.
 
+## [1.2.6] - 2026-04-15 — Stage A++: cpc-breadcrumbs shared crate
+
+### Added
+- **`cpc-breadcrumbs/`** — New shared breadcrumb crate bundled as path dependency.
+  Replaces both the autonomous and local standalone implementations with a single
+  source of truth. Provides: multi-project concurrent breadcrumbs, per-project
+  file locking with 3s retry (fs2 flock), conflict detection (30s window,
+  different writer_session → `conflict_warning` in response), Drive-synced archiving
+  on complete/abort (`C:\My Drive\Volumes\breadcrumbs\completed\{date}\bc_{id}.json`),
+  and auto-reap on server startup via `CPC_BREADCRUMB_AUTO_REAP_HOURS` env var.
+
+### Changed
+- **`src/tools/breadcrumbs.rs`** — Replaced 750-line standalone implementation with
+  thin wrapper over `cpc_breadcrumbs`. All public functions preserved:
+  `startup_cleanup`, `has_active`, `auto_breadcrumb_start`, `auto_breadcrumb_advance`,
+  `get_definitions`, `execute`.
+- **New tool schemas** — `breadcrumb_start` now accepts optional `project_id`.
+  `breadcrumb_step`, `breadcrumb_complete`, `breadcrumb_abort`, `breadcrumb_backup`
+  now accept optional `breadcrumb_id` (required only when >1 active breadcrumb).
+- **Backward compatibility preserved** — Callers that pass no `project_id` get
+  project `_ungrouped`. Callers that pass no `breadcrumb_id` work as long as there
+  is exactly one active breadcrumb (same as before). Only errors on ambiguity
+  (>1 active, no id provided).
+- **`breadcrumb_clear`** — Updated to clear local active state (`C:\CPC\state\breadcrumbs\`).
+  Drive archives are write-once and not cleared by this tool.
+
+### Storage layout (new)
+- Active:  `C:\CPC\state\breadcrumbs\active.index.json` + `projects\{project_id}.jsonl`
+- Archive: `C:\My Drive\Volumes\breadcrumbs\completed\{YYYY-MM-DD}\bc_{id}.json`
+
+### Environment variables
+- `CPC_BREADCRUMB_AUTO_REAP_HOURS` — Set to positive integer N to auto-reap
+  breadcrumbs with `last_activity_at > N hours ago` on server startup.
+  Unset (default) = auto-reap disabled.
+
+### Version
+- `Cargo.toml`: version bumped to `1.2.6`
+
 ## [1.2.5] - 2026-04-15 — Post-v1.2.2 Monorepo Sync
 
 ### Changed
