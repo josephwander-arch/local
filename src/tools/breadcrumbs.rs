@@ -2,14 +2,17 @@
 //! Thin wrapper over cpc-breadcrumbs.
 //!
 //! Preserved from original:
-//!   - startup_cleanup / has_active / auto_breadcrumb_start / auto_breadcrumb_advance
+//!   - startup_cleanup / has_active
 //!   - breadcrumb_clear tool (local-specific active-state cleanup)
+//!   - breadcrumb_list with filter param (active | archived | all)
 //!   - get_definitions / execute dispatch
+//! Removed in v1.2.9: auto_breadcrumb_start / auto_breadcrumb_advance
+//!   (was auto-starting breadcrumbs for every powershell/chain/psession_run call,
+//!    polluting breadcrumb_list with single-step noise)
 //!
 //! All storage/locking/conflict/archive logic is in cpc-breadcrumbs.
-// NAV: 2026-04-15 | thin wrapper | extras: auto_breadcrumb, breadcrumb_clear
+// NAV: 2026-04-15 | thin wrapper | extras: breadcrumb_clear, breadcrumb_list(filter)
 
-use chrono::Local;
 use serde_json::{json, Value};
 use cpc_breadcrumbs::WriterContext;
 use std::sync::OnceLock;
@@ -57,54 +60,6 @@ pub fn startup_cleanup() {
 /// Returns true if any active breadcrumb exists.
 pub fn has_active() -> bool {
     cpc_breadcrumbs::has_active()
-}
-
-// ── Auto-breadcrumb (single-step auto-tracking for powershell/chain/etc.) ──────
-
-/// Auto-starts a breadcrumb for `tool` if none is active.
-/// Returns true if a new breadcrumb was started, false if one already existed.
-pub fn auto_breadcrumb_start(tool: &str) -> bool {
-    if has_active() {
-        return false;
-    }
-    let ts = Local::now().format("%Y%m%d_%H%M%S");
-    let name = format!("auto_{}_{}", tool, ts);
-    let step = format!("{} call", tool);
-    let ctx = local_ctx();
-    cpc_breadcrumbs::start_auto(&name, vec![step], None, &ctx).is_ok()
-}
-
-/// Advances an auto-started breadcrumb and completes it if all steps done.
-/// No-ops if no active breadcrumb, or if the active one was not auto-started.
-pub fn auto_breadcrumb_advance(result: &Value) {
-    // Only advance if exactly one active breadcrumb exists that is auto_started.
-    let index = cpc_breadcrumbs::read_active_index();
-    if index.len() != 1 {
-        return;
-    }
-    let (bc_id, entry) = match index.iter().next() {
-        Some(pair) => (pair.0.clone(), pair.1.clone()),
-        None => return,
-    };
-    // Check auto_started by loading the breadcrumb
-    let pid = entry.project_id.as_deref().unwrap_or("_ungrouped");
-    let bcs = cpc_breadcrumbs::load_project_bcs(pid);
-    let is_auto = bcs.iter().any(|bc| bc.id == bc_id && bc.auto_started);
-    if !is_auto {
-        return;
-    }
-
-    let result_str = serde_json::to_string(result).unwrap_or_else(|_| result.to_string());
-    let ctx = local_ctx();
-    // Step it
-    if let Ok(step_resp) = cpc_breadcrumbs::step(&result_str, Vec::new(), Some(&bc_id), &ctx) {
-        let current = step_resp.get("current").and_then(|v| v.as_u64()).unwrap_or(0);
-        let total = step_resp.get("total").and_then(|v| v.as_u64()).unwrap_or(1);
-        if current >= total {
-            // Complete it
-            let _ = cpc_breadcrumbs::complete("auto-completed", Some(&bc_id), &ctx);
-        }
-    }
 }
 
 // ── Tool handlers ─────────────────────────────────────────────────────────────
@@ -187,9 +142,82 @@ fn breadcrumb_adopt(args: &Value) -> Value {
 }
 
 fn breadcrumb_list(args: &Value) -> Value {
-    let scope = args.get("scope").and_then(|v| v.as_str());
-    cpc_breadcrumbs::list(scope)
-        .unwrap_or_else(|e| json!({ "error": e.to_string() }))
+    // filter: "active" | "archived" | "all"  (new in v1.2.9)
+    // scope: "active" | "today" | "week" | "all"  (legacy, used when filter is absent)
+    let filter = args.get("filter").and_then(|v| v.as_str());
+    let scope  = args.get("scope").and_then(|v| v.as_str());
+
+    match filter {
+        Some("active") => {
+            // Live active entries from C:\CPC\state\breadcrumbs\
+            let result = cpc_breadcrumbs::status(None, Some("active"))
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            let mut out = result;
+            if let Some(bcs) = out.get_mut("breadcrumbs").and_then(|v| v.as_array_mut()) {
+                for bc in bcs.iter_mut() {
+                    if let Some(obj) = bc.as_object_mut() {
+                        obj.insert("source".to_string(), json!("active"));
+                    }
+                }
+            }
+            out["filter"] = json!("active");
+            out
+        }
+        Some("archived") => {
+            // Archived entries from Drive: C:\My Drive\Volumes\breadcrumbs\completed\{date}\
+            let eff_scope = scope.unwrap_or("today");
+            let mut result = cpc_breadcrumbs::list(Some(eff_scope))
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            if let Some(bcs) = result.get_mut("breadcrumbs").and_then(|v| v.as_array_mut()) {
+                for bc in bcs.iter_mut() {
+                    if let Some(obj) = bc.as_object_mut() {
+                        obj.insert("source".to_string(), json!("archived"));
+                    }
+                }
+            }
+            result["filter"] = json!("archived");
+            result
+        }
+        Some("all") => {
+            // Merge active (state dir) + archived (Drive)
+            let active_result = cpc_breadcrumbs::status(None, Some("active"))
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            let eff_scope = scope.unwrap_or("today");
+            let archived_result = cpc_breadcrumbs::list(Some(eff_scope))
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
+
+            let mut combined: Vec<Value> = Vec::new();
+            if let Some(bcs) = active_result.get("breadcrumbs").and_then(|v| v.as_array()) {
+                for bc in bcs {
+                    let mut entry = bc.clone();
+                    if let Some(obj) = entry.as_object_mut() {
+                        obj.insert("source".to_string(), json!("active"));
+                    }
+                    combined.push(entry);
+                }
+            }
+            if let Some(bcs) = archived_result.get("breadcrumbs").and_then(|v| v.as_array()) {
+                for bc in bcs {
+                    let mut entry = bc.clone();
+                    if let Some(obj) = entry.as_object_mut() {
+                        obj.insert("source".to_string(), json!("archived"));
+                    }
+                    combined.push(entry);
+                }
+            }
+            json!({
+                "filter": "all",
+                "count": combined.len(),
+                "breadcrumbs": combined
+            })
+        }
+        None => {
+            // Legacy: scope param (default: today, from cpc_breadcrumbs::list)
+            cpc_breadcrumbs::list(scope)
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }))
+        }
+        _ => json!({ "error": "Invalid filter value. Accepted: active | archived | all" }),
+    }
 }
 
 /// Clear active breadcrumb state (local CPC state dir).
@@ -352,11 +380,12 @@ pub fn get_definitions() -> Vec<Value> {
         }),
         json!({
             "name": "breadcrumb_list",
-            "description": "List breadcrumbs from archive by scope.",
+            "description": "List breadcrumbs. Use filter param for explicit source selection. Each entry includes a source field ('active' or 'archived') when filter is set.",
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "scope": { "type": "string", "description": "active | today | week | all. Default: today" }
+                    "filter": { "type": "string", "description": "active — live state dir only; archived — Drive completed archive only; all — both merged with source field. When omitted, falls through to scope param." },
+                    "scope": { "type": "string", "description": "Legacy: active | today | week | all. Default: today. Used when filter is not set, or as the archive window for filter=archived|all." }
                 },
                 "required": []
             }
@@ -393,5 +422,6 @@ pub fn execute(name: &str, args: &Value) -> Value {
 
 // === FILE NAVIGATION ===
 // 2026-04-15 | thin wrapper over cpc-breadcrumbs
-// pub: startup_cleanup, has_active, auto_breadcrumb_start, auto_breadcrumb_advance, get_definitions, execute
-// private: local_ctx, breadcrumb_{start,step,complete,abort,status,backup,clear}
+// v1.2.9: removed auto_breadcrumb_start/advance; added breadcrumb_list filter param
+// pub: startup_cleanup, has_active, get_definitions, execute
+// private: local_ctx, breadcrumb_{start,step,complete,abort,status,backup,adopt,list,clear}

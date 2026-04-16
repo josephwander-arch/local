@@ -85,9 +85,12 @@ try {
         process.exit(0);
     }
 
-    // Check for active breadcrumb overlap
+    // Check for active breadcrumb overlap.
+    // Skip stale records: completed/archived/aborted entries must not block new ops.
     const active = readJson(ACTIVE_BREADCRUMB_FILE);
-    if (active) {
+    const activeStatus = active?.status || '';
+    const isStale = activeStatus === 'completed' || activeStatus === 'archived' || activeStatus === 'aborted';
+    if (active && !isStale) {
         const activeName = active.name || active.operation_name || 'unnamed';
         if (normalizeName(activeName) !== normalizeName(name)) {
             deny(`Active breadcrumb already in progress: "${activeName}". Resume, abort, or take over before starting a new operation.`);

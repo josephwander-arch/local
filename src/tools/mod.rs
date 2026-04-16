@@ -53,22 +53,6 @@ pub fn get_all_definitions() -> Vec<Value> {
 
 /// Execute tool by name
 pub fn execute(name: &str, args: &Value) -> Value {
-    // Auto-breadcrumb triggers: powershell, chain, psession_run
-    // If no active breadcrumb, auto-start one, advance it after the call, and complete it.
-    // If an active breadcrumb already exists, just run the tool uninterrupted.
-    if name == "powershell" || name == "chain" || name == "psession_run" {
-        let was_auto = breadcrumbs::auto_breadcrumb_start(name);
-        let result = if name == "psession_run" {
-            psession::execute(name, args)
-        } else {
-            raw::execute(name, args)
-        };
-        if was_auto {
-            breadcrumbs::auto_breadcrumb_advance(&result);
-        }
-        return result;
-    }
-
     // Route by prefix
     if name.starts_with("raw_") {
         return raw::execute(name, args);

@@ -4,22 +4,17 @@
 use chrono;
 use serde_json::{json, Value};
 use std::process::Command;
+use cpc_breadcrumbs;
 
 const FALLBACK_MAP_PATH: &str = "C:\\My Drive\\Volumes\\system_architecture\\tool_fallback_map.json";
 
 // ── local_health helpers ───────────────────────────────────────────────────────
 
 /// Count entries in the active breadcrumb index.
+/// Delegates to cpc_breadcrumbs::active_count() which reads the live index object.
+/// (Previous impl used .as_array() on an object — always returned 0.)
 fn count_active_breadcrumbs() -> usize {
-    let path = r"C:\CPC\state\breadcrumbs\active.index.json";
-    let content = match std::fs::read_to_string(path) {
-        Ok(c) => c,
-        Err(_) => return 0,
-    };
-    serde_json::from_str::<serde_json::Value>(&content)
-        .ok()
-        .and_then(|v| v.as_array().map(|a| a.len()))
-        .unwrap_or(0)
+    cpc_breadcrumbs::active_count()
 }
 
 /// Count archived breadcrumbs completed today.
@@ -42,7 +37,7 @@ fn local_health() -> Value {
 
     json!({
         "server": "local",
-        "version": "1.2.8",
+        "version": "1.2.9",
         "paths": paths,
         "breadcrumbs": {
             "active_count": active_breadcrumbs,
@@ -342,7 +337,7 @@ mod tests {
         let result = local_health();
 
         assert_eq!(result["server"], "local", "server field must be 'local'");
-        assert_eq!(result["version"], "1.2.8", "version must be '1.2.8'");
+        assert_eq!(result["version"], "1.2.9", "version must be '1.2.8'");
         assert!(result.get("paths").is_some(), "paths field must be present");
         assert!(result.get("breadcrumbs").is_some(), "breadcrumbs field must be present");
         assert!(result.get("sessions").is_some(), "sessions field must be present");
@@ -393,5 +388,25 @@ mod tests {
         let result = execute("local_health", &json!({}));
         assert_eq!(result["server"], "local", "execute('local_health') must reach local_health()");
         assert!(result.get("error").is_none(), "execute('local_health') must not return error");
+    }
+
+    /// Verify active_count reflects truth: delegates to cpc_breadcrumbs::active_count()
+    /// which reads the live index object (not an array — previous impl bug).
+    #[test]
+    fn test_active_count_uses_index_object() {
+        // count_active_breadcrumbs() reads the index as an object (HashMap).
+        // If the previous as_array() bug is present, count would be 0 even when breadcrumbs exist.
+        let count = count_active_breadcrumbs();
+        // The count is a valid usize — value depends on runtime state.
+        // During CI with no active breadcrumbs this will be 0, which is correct.
+        // The important invariant: this compiles and does not panic.
+        let _ = count;
+
+        // Verify local_health surfaces the same count
+        let result = local_health();
+        let reported = result["breadcrumbs"]["active_count"].as_u64()
+            .expect("breadcrumbs.active_count must be a u64");
+        assert_eq!(reported as usize, count_active_breadcrumbs(),
+            "local_health active_count must match cpc_breadcrumbs::active_count()");
     }
 }

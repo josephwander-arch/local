@@ -4,8 +4,19 @@ All notable changes to the local MCP server are documented here.
 
 ## [Unreleased]
 
+## [1.2.9] - 2026-04-15 — HTTP body bump, breadcrumb hygiene, filter param, Apache 2.0
+
 ### Changed
-- `cpc-breadcrumbs` dependency updated: Volumes archive path now resolved via `cpc_paths::volumes_path()` instead of `VOLUMES_PATH` env var direct lookup. Falls back to hardcoded default if resolution fails — no behavior change for existing installs.
+- **HTTP body cap raised 100KB → 500KB** in `http_request`; fetch cap raised 50KB → 500KB in `http_fetch`.
+- **Removed `auto_powershell_*` breadcrumb noise** — powershell/chain/psession_run no longer auto-start single-step breadcrumbs on every call. Breadcrumb tracking is now explicit-only.
+- **`breadcrumb_list` filter param** — new `filter: "active" | "archived" | "all"`. Active entries come from live state dir; archived from Drive completed archive. Each entry includes `source: "active" | "archived"` field when filter is set.
+- **Fixed `local_health.breadcrumbs.active_count` always-zero bug** — was calling `.as_array()` on the index which is an object; now delegates to `cpc_breadcrumbs::active_count()` directly.
+- **Fixed `breadcrumb_start_guard.js` stale-read bug** — hook now checks `status` field and cross-references the live index before blocking; completed/aborted/archived entries no longer block new operations.
+- **License changed MIT → Apache-2.0.**
+- **Cargo.toml `cpc-breadcrumbs` dependency updated:** Volumes archive path now resolved via `cpc_paths::volumes_path()` with hardcoded fallback. No behavior change for existing installs.
+
+### Added
+- Two-Tier Storage section in `docs/per_machine_setup.md`.
 
 ## [1.2.8] - 2026-04-15 — Stage C-A: cpc-paths integration + local_health tool
 

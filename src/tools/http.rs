@@ -127,13 +127,15 @@ fn http_request(args: &Value) -> Value {
                 .collect();
             let body_text = response.text().unwrap_or_default();
             let body_len = body_text.len();
+            // Body cap: 500KB (was 100KB before v1.2.9)
+            const BODY_CAP: usize = 500_000;
             json!({
                 "success": status >= 200 && status < 300,
                 "status_code": status,
                 "headers": response_headers,
-                "body": if body_len > 100000 { &body_text[..100000] } else { &body_text },
+                "body": if body_len > BODY_CAP { &body_text[..BODY_CAP] } else { &body_text },
                 "body_length": body_len,
-                "truncated": body_len > 100000,
+                "truncated": body_len > BODY_CAP,
                 "response_time_ms": elapsed
             })
         }
@@ -176,9 +178,10 @@ fn http_fetch(args: &Value) -> Value {
     {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout);
-            // Truncate if too large
-            let content = if stdout.len() > 50000 {
-                format!("{}\n...[truncated to 50KB]", &stdout[..50000])
+            // Truncate if too large (cap 500KB, was 50KB before v1.2.9)
+            const FETCH_CAP: usize = 500_000;
+            let content = if stdout.len() > FETCH_CAP {
+                format!("{}\n...[truncated to 500KB]", &stdout[..FETCH_CAP])
             } else {
                 stdout.to_string()
             };
