@@ -2,7 +2,7 @@
 //! Thin wrapper over cpc-breadcrumbs.
 //!
 //! Preserved from original:
-//!   - startup_cleanup / has_active
+//!   - startup_cleanup
 //!   - breadcrumb_clear tool (local-specific active-state cleanup)
 //!   - breadcrumb_list with filter param (active | archived | all)
 //!   - get_definitions / execute dispatch
@@ -11,7 +11,7 @@
 //!    polluting breadcrumb_list with single-step noise)
 //!
 //! All storage/locking/conflict/archive logic is in cpc-breadcrumbs.
-// NAV: 2026-04-15 | thin wrapper | extras: breadcrumb_clear, breadcrumb_list(filter)
+// NAV: TOC at line 424 | 14 fn | 0 struct | 2026-04-15
 
 use serde_json::{json, Value};
 use cpc_breadcrumbs::WriterContext;
@@ -55,11 +55,6 @@ fn local_ctx() -> WriterContext {
 /// (env: LOCAL_BREADCRUMB_RETENTION_DAYS, default 30). Non-blocking.
 pub fn startup_cleanup() {
     cpc_breadcrumbs::init();
-}
-
-/// Returns true if any active breadcrumb exists.
-pub fn has_active() -> bool {
-    cpc_breadcrumbs::has_active()
 }
 
 // ── Tool handlers ─────────────────────────────────────────────────────────────
@@ -423,5 +418,32 @@ pub fn execute(name: &str, args: &Value) -> Value {
 // === FILE NAVIGATION ===
 // 2026-04-15 | thin wrapper over cpc-breadcrumbs
 // v1.2.9: removed auto_breadcrumb_start/advance; added breadcrumb_list filter param
-// pub: startup_cleanup, has_active, get_definitions, execute
+// pub: startup_cleanup, get_definitions, execute
 // private: local_ctx, breadcrumb_{start,step,complete,abort,status,backup,adopt,list,clear}
+
+// === FILE NAVIGATION ===
+// Generated: 2026-04-15T20:31:12
+// Total: 421 lines | 14 functions | 0 structs | 1 constants
+//
+// IMPORTS: cpc_breadcrumbs, serde_json, std
+//
+// CONSTANTS:
+//   static STARTUP_SESSION_ID: 21
+//
+// FUNCTIONS:
+//   startup_session_id: 23-38
+//   local_ctx: 42-48
+//   pub +startup_cleanup: 55-57
+//   breadcrumb_start: 61-75
+//   breadcrumb_step: 77-91
+//   breadcrumb_complete: 93-102
+//   breadcrumb_abort: 104-113
+//   breadcrumb_status: 115-118
+//   breadcrumb_backup: 120-124
+//   breadcrumb_adopt: 126-136
+//   breadcrumb_list: 138-215 [med]
+//   breadcrumb_clear: 219-291 [med]
+//   pub +get_definitions: 295-400 [LARGE]
+//   pub +execute: 402-415
+//
+// === END FILE NAVIGATION ===

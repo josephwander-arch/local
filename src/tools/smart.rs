@@ -1,7 +1,7 @@
 //! Smart execution routing - Auto-picks best tool for the job
 //! Now with auto-retry on known error patterns
 //! Reads/writes to Volumes/logs/error_fallbacks.json
-// NAV: TOC at line 323 | 11 fn |  struct | 2026-03-04
+// NAV: TOC at line 323 | 11 fn |  struct | 2026-04-15
 
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -321,7 +321,7 @@ fn smart_read(args: &Value) -> Value {
 }
 
 // === FILE NAVIGATION ===
-// Generated: 2026-03-04T17:12:34
+// Generated: 2026-04-15T22:03:45
 // Total: 320 lines | 11 functions |  structs | 2 constants
 //
 // IMPORTS: serde, serde_json, std, super

@@ -28,6 +28,18 @@ pub fn active_count() -> usize {
     SESSIONS.lock().map(|s| s.len()).unwrap_or(0)
 }
 
+/// Return lightweight info about each active session (name, cwd, command_count).
+pub fn list_active_sessions() -> Vec<serde_json::Value> {
+    match SESSIONS.lock() {
+        Ok(sessions) => sessions.values().map(|s| serde_json::json!({
+            "name": s.name,
+            "cwd": s.cwd,
+            "command_count": s.history.len()
+        })).collect(),
+        Err(_) => vec![],
+    }
+}
+
 struct PersistentSession {
     name: String,
     child: Child,

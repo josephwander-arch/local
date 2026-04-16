@@ -37,7 +37,7 @@ fn local_health() -> Value {
 
     json!({
         "server": "local",
-        "version": "1.2.9",
+        "version": "1.2.10",
         "paths": paths,
         "breadcrumbs": {
             "active_count": active_breadcrumbs,
@@ -337,7 +337,7 @@ mod tests {
         let result = local_health();
 
         assert_eq!(result["server"], "local", "server field must be 'local'");
-        assert_eq!(result["version"], "1.2.9", "version must be '1.2.8'");
+        assert_eq!(result["version"], "1.2.10", "version must be '1.2.10'");
         assert!(result.get("paths").is_some(), "paths field must be present");
         assert!(result.get("breadcrumbs").is_some(), "breadcrumbs field must be present");
         assert!(result.get("sessions").is_some(), "sessions field must be present");

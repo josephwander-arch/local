@@ -1,11 +1,12 @@
 //! MCP-Windows: Raw tools + Windows automation for Claude Desktop
 //! Replaces: raw-tools (Python) + windows-mcp (uvx)
-// NAV: TOC at line 148 | 2 fn | 2 struct | 2026-04-11
+// NAV: TOC at line 152 | 2 fn | 2 struct | 2026-04-15
 
 use std::io::{self, BufRead, Write};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 
+mod dashboard_endpoint;
 mod tools;
 
 #[derive(Debug, Deserialize)]
@@ -31,6 +32,9 @@ struct JsonRpcResponse {
 fn main() {
     // Non-blocking cleanup of breadcrumb archives older than LOCAL_BREADCRUMB_RETENTION_DAYS (default 30d)
     tools::breadcrumbs_startup_cleanup();
+
+    // Spawn HTTP dashboard endpoint (127.0.0.1:9101 by default)
+    dashboard_endpoint::spawn();
 
     let stdin = io::stdin();
     let mut stdout = io::stdout();
@@ -146,17 +150,17 @@ fn handle_request(request: &JsonRpcRequest) -> JsonRpcResponse {
 }
 
 // === FILE NAVIGATION ===
-// Generated: 2026-04-11T11:25:53
-// Total: 145 lines | 2 functions | 2 structs | 0 constants
+// Generated: 2026-04-15T22:03:42
+// Total: 149 lines | 2 functions | 2 structs | 0 constants
 //
 // IMPORTS: serde, serde_json, std
 //
 // STRUCTS:
-//   JsonRpcRequest: 11-18
-//   JsonRpcResponse: 21-28
+//   JsonRpcRequest: 12-19
+//   JsonRpcResponse: 22-29
 //
 // FUNCTIONS:
-//   main: 30-82 [med]
-//   handle_request: 84-145 [med]
+//   main: 31-86 [med]
+//   handle_request: 88-149 [med]
 //
 // === END FILE NAVIGATION ===

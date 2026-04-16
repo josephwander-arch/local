@@ -1,5 +1,5 @@
 //! Tool modules for MCP-Windows
-// NAV: TOC at line 137 | 3 fn | 0 struct | 2026-04-11
+// NAV: TOC at line 121 | 3 fn | 0 struct | 2026-04-15
 
 pub mod raw;
 pub mod http;
@@ -119,14 +119,14 @@ pub fn execute(name: &str, args: &Value) -> Value {
 }
 
 // === FILE NAVIGATION ===
-// Generated: 2026-04-11T11:25:55
-// Total: 134 lines | 3 functions | 0 structs | 0 constants
+// Generated: 2026-04-15T20:31:15
+// Total: 118 lines | 3 functions | 0 structs | 0 constants
 //
 // IMPORTS: serde_json
 //
 // FUNCTIONS:
 //   pub +breadcrumbs_startup_cleanup: 26-28
 //   pub +get_all_definitions: 31-51
-//   pub +execute: 54-134 [med]
+//   pub +execute: 54-118 [med]
 //
 // === END FILE NAVIGATION ===
