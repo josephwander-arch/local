@@ -1,11 +1,11 @@
 //! Terminal execution logging
 //! Logs all command executions to C:\My Drive\Volumes\logs\terminal_log.jsonl
 
+use chrono::Local;
 use serde_json::{json, Value};
-use std::fs::{OpenOptions, create_dir_all};
+use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
 use std::path::Path;
-use chrono::Local;
 
 const LOG_PATH: &str = r"C:\My Drive\Volumes\logs\terminal_log.jsonl";
 
@@ -15,7 +15,7 @@ pub fn log_execution(tool: &str, command: &str, stdout: &str, stderr: &str, succ
     if let Some(parent) = Path::new(LOG_PATH).parent() {
         let _ = create_dir_all(parent);
     }
-    
+
     let entry = json!({
         "timestamp": Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string(),
         "tool": tool,
@@ -24,13 +24,9 @@ pub fn log_execution(tool: &str, command: &str, stdout: &str, stderr: &str, succ
         "stderr": truncate_for_log(stderr, 1000),
         "success": success
     });
-    
+
     // Append to log file
-    if let Ok(mut file) = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(LOG_PATH)
-    {
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(LOG_PATH) {
         let _ = writeln!(file, "{}", entry.to_string());
     }
 }
@@ -50,11 +46,12 @@ pub fn get_recent_logs(count: usize) -> Value {
     match std::fs::read_to_string(LOG_PATH) {
         Ok(content) => {
             let lines: Vec<&str> = content.lines().rev().take(count).collect();
-            let entries: Vec<Value> = lines.iter()
+            let entries: Vec<Value> = lines
+                .iter()
                 .filter_map(|line| serde_json::from_str(line).ok())
                 .collect();
             json!(entries)
         }
-        Err(_) => json!([])
+        Err(_) => json!([]),
     }
 }

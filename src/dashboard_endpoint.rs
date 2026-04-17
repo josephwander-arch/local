@@ -36,8 +36,15 @@ pub fn spawn() {
                 }
             };
 
-            let port = server.server_addr().to_ip().map(|a| a.port()).unwrap_or(base_port);
-            eprintln!("[local/dashboard] Listening on http://127.0.0.1:{}/api/status", port);
+            let port = server
+                .server_addr()
+                .to_ip()
+                .map(|a| a.port())
+                .unwrap_or(base_port);
+            eprintln!(
+                "[local/dashboard] Listening on http://127.0.0.1:{}/api/status",
+                port
+            );
 
             for request in server.incoming_requests() {
                 handle_request(request);
@@ -59,16 +66,19 @@ fn try_bind(base_port: u16) -> Option<tiny_http::Server> {
 fn cors_headers() -> Vec<tiny_http::Header> {
     vec![
         "Access-Control-Allow-Origin: *".parse().unwrap(),
-        "Access-Control-Allow-Methods: GET, POST, OPTIONS".parse().unwrap(),
-        "Access-Control-Allow-Headers: Content-Type".parse().unwrap(),
+        "Access-Control-Allow-Methods: GET, POST, OPTIONS"
+            .parse()
+            .unwrap(),
+        "Access-Control-Allow-Headers: Content-Type"
+            .parse()
+            .unwrap(),
         "Content-Type: application/json".parse().unwrap(),
     ]
 }
 
 fn respond(request: tiny_http::Request, status: u16, body: Value) {
     let body_str = serde_json::to_string(&body).unwrap_or_default();
-    let mut response = tiny_http::Response::from_string(body_str)
-        .with_status_code(status);
+    let mut response = tiny_http::Response::from_string(body_str).with_status_code(status);
     for h in cors_headers() {
         response = response.with_header(h);
     }
@@ -161,7 +171,11 @@ fn list_old_binaries(dir: &str) -> Vec<String> {
                 .filter_map(|e| e.ok())
                 .filter_map(|e| {
                     let name = e.file_name().to_string_lossy().to_string();
-                    if name.ends_with(".exe.old") { Some(name) } else { None }
+                    if name.ends_with(".exe.old") {
+                        Some(name)
+                    } else {
+                        None
+                    }
                 })
                 .collect()
         })
@@ -209,11 +223,20 @@ mod tests {
         let status = build_status();
         assert_eq!(status["server"], "local");
         assert_eq!(status["version"], "1.2.10");
-        assert!(status["timestamp"].is_string(), "timestamp must be a string");
+        assert!(
+            status["timestamp"].is_string(),
+            "timestamp must be a string"
+        );
         assert!(status["health"].is_object(), "health must be an object");
         assert!(status["health"]["paths"].is_object() || status["health"]["paths"].is_null());
-        assert!(status["breadcrumbs"].is_object(), "breadcrumbs must be an object");
-        assert!(status["breadcrumbs"]["active"].is_array(), "active must be an array");
+        assert!(
+            status["breadcrumbs"].is_object(),
+            "breadcrumbs must be an object"
+        );
+        assert!(
+            status["breadcrumbs"]["active"].is_array(),
+            "active must be an array"
+        );
         assert!(status["breadcrumbs"]["active_count"].is_number());
         assert!(status["sessions"].is_object(), "sessions must be an object");
         assert!(status["sessions"]["active_count"].is_number());

@@ -3,9 +3,12 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 
 fn bagtag_path() -> Result<PathBuf, String> {
-    let local_app_data = std::env::var("LOCALAPPDATA")
-        .map_err(|_| "LOCALAPPDATA not set".to_string())?;
-    Ok(PathBuf::from(local_app_data).join("CPC").join("config").join("bagtag.json"))
+    let local_app_data =
+        std::env::var("LOCALAPPDATA").map_err(|_| "LOCALAPPDATA not set".to_string())?;
+    Ok(PathBuf::from(local_app_data)
+        .join("CPC")
+        .join("config")
+        .join("bagtag.json"))
 }
 
 fn read_bagtag() -> Result<Value, String> {
@@ -13,10 +16,9 @@ fn read_bagtag() -> Result<Value, String> {
     if !path.exists() {
         return Err("BagTag not configured - run installer".to_string());
     }
-    let contents = std::fs::read_to_string(&path)
-        .map_err(|e| format!("Failed to read bagtag.json: {}", e))?;
-    serde_json::from_str(&contents)
-        .map_err(|e| format!("Failed to parse bagtag.json: {}", e))
+    let contents =
+        std::fs::read_to_string(&path).map_err(|e| format!("Failed to read bagtag.json: {}", e))?;
+    serde_json::from_str(&contents).map_err(|e| format!("Failed to parse bagtag.json: {}", e))
 }
 
 pub fn get_definitions() -> Vec<Value> {
@@ -63,7 +65,8 @@ pub fn execute(name: &str, args: &Value) -> Value {
 fn bag_tag(_args: &Value) -> Value {
     match read_bagtag() {
         Ok(data) => {
-            let install_code = data.get("install_code")
+            let install_code = data
+                .get("install_code")
                 .and_then(|v| v.as_str())
                 .unwrap_or("");
             let timestamp = Local::now().format("%m%d%y%H%M%S").to_string();

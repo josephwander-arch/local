@@ -1,25 +1,25 @@
 //! Tool modules for MCP-Windows
 // NAV: TOC at line 121 | 3 fn | 0 struct | 2026-04-15
 
-pub mod raw;
-pub mod http;
-pub mod session;
-pub mod transforms;
-pub mod security;
-pub mod shortcuts;
-pub mod smart;
-pub mod log;
-pub mod utils;
 pub mod auto_backup;
+pub mod bagtag;
+pub mod breadcrumbs;
 pub mod git;
 pub mod health;
-pub mod toc;
+pub mod http;
+pub mod log;
 pub mod planner;
-pub mod bagtag;
-pub mod sqlite;
 pub mod psession;
+pub mod raw;
 pub mod registry;
-pub mod breadcrumbs;
+pub mod security;
+pub mod session;
+pub mod shortcuts;
+pub mod smart;
+pub mod sqlite;
+pub mod toc;
+pub mod transforms;
+pub mod utils;
 
 use serde_json::Value;
 
@@ -83,23 +83,43 @@ pub fn execute(name: &str, args: &Value) -> Value {
     if name.starts_with("git_") {
         return git::execute(name, args);
     }
-    if name == "local_health" || name.starts_with("server_") || name.starts_with("tool_fallback") || name.starts_with("preflight_") {
+    if name == "local_health"
+        || name.starts_with("server_")
+        || name.starts_with("tool_fallback")
+        || name.starts_with("preflight_")
+    {
         return health::execute(name, args);
-    }    // Standalone tools in raw module
-    if name == "run" || name == "chain" || name == "read_file" || name == "read"
-        || name == "write_file" || name == "write" || name == "append_file" || name == "append"
-        || name == "list_dir" || name == "list_process" || name == "kill_process"
-        || name == "get_env" || name == "clipboard_read" || name == "clipboard_write"
-        || name == "powershell" || name == "notify"
-        || name == "archive_create" || name == "archive_extract"
-        || name == "search_file" || name == "search_files"
+    } // Standalone tools in raw module
+    if name == "run"
+        || name == "chain"
+        || name == "read_file"
+        || name == "read"
+        || name == "write_file"
+        || name == "write"
+        || name == "append_file"
+        || name == "append"
+        || name == "list_dir"
+        || name == "list_process"
+        || name == "kill_process"
+        || name == "get_env"
+        || name == "clipboard_read"
+        || name == "clipboard_write"
+        || name == "powershell"
+        || name == "notify"
+        || name == "archive_create"
+        || name == "archive_extract"
+        || name == "search_file"
+        || name == "search_files"
         || name == "system_info"
-        || name == "recovery_status" || name == "recovery_resume" || name == "resume_operation"
-        || name == "recovery_clear" || name == "clear_recovery" {
+        || name == "recovery_status"
+        || name == "recovery_resume"
+        || name == "resume_operation"
+        || name == "recovery_clear"
+        || name == "clear_recovery"
+    {
         return raw::execute(name, args);
     }
-    
-    
+
     if name.starts_with("psession_") {
         return psession::execute(name, args);
     }
@@ -109,11 +129,21 @@ pub fn execute(name: &str, args: &Value) -> Value {
     if name == "registry_read" {
         return registry::execute(name, args);
     }
-    if name == "sqlite_query" { return sqlite::execute(name, args); }
-    if name == "port_check" || name == "tail_file" { return raw::execute(name, args); }
-    if name == "plan" { return planner::plan(args); }
-    if name == "assemble" { return planner::assemble(args); }
-    if name.starts_with("breadcrumb_") { return breadcrumbs::execute(name, args); }
+    if name == "sqlite_query" {
+        return sqlite::execute(name, args);
+    }
+    if name == "port_check" || name == "tail_file" {
+        return raw::execute(name, args);
+    }
+    if name == "plan" {
+        return planner::plan(args);
+    }
+    if name == "assemble" {
+        return planner::assemble(args);
+    }
+    if name.starts_with("breadcrumb_") {
+        return breadcrumbs::execute(name, args);
+    }
 
     serde_json::json!({"error": format!("Unknown tool: {}", name)})
 }

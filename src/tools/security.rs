@@ -2,36 +2,47 @@
 //! Warns on dangerous commands rather than blocking (configurable)
 //! Full PATH from Registry is READ-ONLY by design - never edit system PATH
 
+use chrono::Local;
 use serde_json::{json, Value};
 use std::fs::OpenOptions;
 use std::io::Write;
-use chrono::Local;
 use std::path::Path;
 
 /// Sensitive file paths that should NEVER be read/written by AI tools.
 /// These are enforced at the tool level, not advisory.
 const SENSITIVE_PATH_PATTERNS: &[&str] = &[
     // SSH keys (not config, just private keys)
-    ".ssh/id_rsa", ".ssh\\id_rsa",
-    ".ssh/id_ed25519", ".ssh\\id_ed25519",
-    ".ssh/id_ecdsa", ".ssh\\id_ecdsa",
-    ".ssh/id_dsa", ".ssh\\id_dsa",
+    ".ssh/id_rsa",
+    ".ssh\\id_rsa",
+    ".ssh/id_ed25519",
+    ".ssh\\id_ed25519",
+    ".ssh/id_ecdsa",
+    ".ssh\\id_ecdsa",
+    ".ssh/id_dsa",
+    ".ssh\\id_dsa",
     // Windows credentials
-    "microsoft\\credentials", "microsoft/credentials",
-    "microsoft\\protect", "microsoft/protect",
+    "microsoft\\credentials",
+    "microsoft/credentials",
+    "microsoft\\protect",
+    "microsoft/protect",
     // Browser passwords (Chrome, Edge, Brave, Firefox)
     "login data",
     "logins.json",
     "key4.db",
     // GPG keys
-    ".gnupg/private", ".gnupg\\private",
-    ".gnupg/secring", ".gnupg\\secring",
+    ".gnupg/private",
+    ".gnupg\\private",
+    ".gnupg/secring",
+    ".gnupg\\secring",
     // Cloud credentials
-    ".aws/credentials", ".aws\\credentials",
-    ".azure/credentials", ".azure\\credentials",
+    ".aws/credentials",
+    ".aws\\credentials",
+    ".azure/credentials",
+    ".azure\\credentials",
     // Crypto wallets
     "wallet.dat",
-    "keystore/utc", "keystore\\utc",
+    "keystore/utc",
+    "keystore\\utc",
 ];
 
 /// Check if a file path is in the sensitive deny list.
@@ -70,53 +81,64 @@ const DANGEROUS_PATTERNS: &[(&str, &str)] = &[
     ("del /s /q c:\\program", "Delete Program Files"),
     ("format c:", "Format system drive"),
     ("rd /s /q c:\\", "Remove entire C: drive"),
-    
     // Fork bombs and resource exhaustion
     (":(){:|:&};:", "Fork bomb (bash)"),
     ("while(1){start powershell}", "Fork bomb (PowerShell)"),
-    
     // Registry damage (we read but never write)
     ("reg delete hklm", "Delete system registry keys"),
-    ("reg delete hkcu\\software\\microsoft", "Delete critical user registry"),
-    
+    (
+        "reg delete hkcu\\software\\microsoft",
+        "Delete critical user registry",
+    ),
     // Crypto/ransomware patterns
     ("cipher /w:", "Secure wipe (often ransomware)"),
     ("-encodedcommand", "Obfuscated PowerShell (malware pattern)"),
     ("invoke-webrequest.*|iex", "Download and execute pattern"),
-    
     // Boot sector / MBR
     ("bootrec /fixmbr", "Modify master boot record"),
     ("bcdedit /delete", "Delete boot configuration"),
-
     // Remote code execution (pipe to shell)
     ("| bash", "Remote code execution via pipe to bash"),
     ("| sh", "Remote code execution via pipe to shell"),
-
     // Account/persistence attacks
     ("net user ", "Creating/modifying system user account"),
     ("net localgroup admin", "Modifying administrator group"),
-    ("schtasks /create", "Creating scheduled task (persistence vector)"),
-
+    (
+        "schtasks /create",
+        "Creating scheduled task (persistence vector)",
+    ),
     // Startup persistence via registry
-    ("currentversion\\run", "Startup persistence via registry Run key"),
-    ("currentversion\\runonce", "Startup persistence via registry RunOnce key"),
-
+    (
+        "currentversion\\run",
+        "Startup persistence via registry Run key",
+    ),
+    (
+        "currentversion\\runonce",
+        "Startup persistence via registry RunOnce key",
+    ),
     // Firewall/network tampering
     ("netsh advfirewall", "Modifying Windows Firewall rules"),
     ("netsh firewall", "Modifying Windows Firewall (legacy)"),
-
     // Download and execute patterns
-    ("bitsadmin /transfer", "Download via BITS (common malware technique)"),
-    ("certutil -urlcache", "Download via certutil (common malware technique)"),
+    (
+        "bitsadmin /transfer",
+        "Download via BITS (common malware technique)",
+    ),
+    (
+        "certutil -urlcache",
+        "Download via certutil (common malware technique)",
+    ),
     ("mshta ", "Execute via mshta (malware technique)"),
     ("regsvr32 /s /n", "Regsvr32 bypass (Squiblydoo attack)"),
-
     // Credential/sensitive file access
     (".ssh\\id_rsa", "Reading SSH private key"),
     (".ssh/id_rsa", "Reading SSH private key"),
     (".ssh\\id_ed25519", "Reading SSH private key"),
     (".ssh/id_ed25519", "Reading SSH private key"),
-    ("microsoft\\credentials", "Accessing Windows credential store"),
+    (
+        "microsoft\\credentials",
+        "Accessing Windows credential store",
+    ),
     ("microsoft\\protect", "Accessing Windows DPAPI keys"),
     (".gnupg", "Accessing GPG private keys"),
     (".aws\\credentials", "Accessing AWS credentials"),
@@ -130,12 +152,16 @@ const CONTEXT_PATTERNS: &[(&str, &str)] = &[
     ("rm -rf", "Recursive delete - check target path"),
     ("del /s", "Recursive delete - check target path"),
     ("rd /s", "Remove directory recursively - check target path"),
-    ("rmdir /s", "Remove directory recursively - check target path"),
+    (
+        "rmdir /s",
+        "Remove directory recursively - check target path",
+    ),
 ];
 
 /// Safe path prefixes - deletions here are generally OK
 const SAFE_PATHS: &[&str] = &[
-    "./", ".\\",
+    "./",
+    ".\\",
     "node_modules",
     "target/",
     "target\\",
@@ -158,7 +184,7 @@ const AUDIT_LOG: &str = "C:\\temp\\mcp_security_audit.log";
 /// Returns: (is_safe, warning_message, severity)
 pub fn check_command(command: &str) -> (bool, Option<String>, &'static str) {
     let cmd_lower = command.to_lowercase();
-    
+
     // Check absolute dangerous patterns
     for (pattern, reason) in DANGEROUS_PATTERNS {
         if cmd_lower.contains(&pattern.to_lowercase()) {
@@ -166,20 +192,28 @@ pub fn check_command(command: &str) -> (bool, Option<String>, &'static str) {
             if is_safe_in_context(&cmd_lower, pattern) {
                 continue;
             }
-            return (false, Some(format!("BLOCKED: {} - {}", pattern, reason)), "critical");
+            return (
+                false,
+                Some(format!("BLOCKED: {} - {}", pattern, reason)),
+                "critical",
+            );
         }
     }
-    
+
     // Check context-aware patterns
     for (pattern, reason) in CONTEXT_PATTERNS {
         if cmd_lower.contains(&pattern.to_lowercase()) {
             // Extract the path being operated on
             if !is_safe_path(&cmd_lower) {
-                return (false, Some(format!("WARNING: {} - verify target is safe", reason)), "warning");
+                return (
+                    false,
+                    Some(format!("WARNING: {} - verify target is safe", reason)),
+                    "warning",
+                );
             }
         }
     }
-    
+
     (true, None, "safe")
 }
 
@@ -191,11 +225,15 @@ fn is_safe_in_context(cmd_lower: &str, pattern: &str) -> bool {
         return true;
     }
     // "netsh advfirewall" is safe when viewing (show/display)
-    if p.starts_with("netsh advfirewall") && (cmd_lower.contains("show") || cmd_lower.contains("display")) {
+    if p.starts_with("netsh advfirewall")
+        && (cmd_lower.contains("show") || cmd_lower.contains("display"))
+    {
         return true;
     }
     // "currentversion\run" is safe when querying registry, not adding
-    if p.contains("currentversion") && (cmd_lower.starts_with("reg query") || cmd_lower.contains("reg query")) {
+    if p.contains("currentversion")
+        && (cmd_lower.starts_with("reg query") || cmd_lower.contains("reg query"))
+    {
         return true;
     }
     false
@@ -215,15 +253,11 @@ fn is_safe_path(command: &str) -> bool {
 pub fn audit_log(command: &str, result: &str, severity: &str) {
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S");
     let entry = format!("[{}] [{}] {} | {}\n", timestamp, severity, result, command);
-    
+
     // Ensure directory exists
     let _ = std::fs::create_dir_all("C:\\temp");
-    
-    if let Ok(mut file) = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(AUDIT_LOG)
-    {
+
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(AUDIT_LOG) {
         let _ = file.write_all(entry.as_bytes());
     }
 }
@@ -267,14 +301,14 @@ pub fn execute(name: &str, args: &Value) -> Value {
         "security_check_cmd" | "security_check_command" => {
             let command = args["command"].as_str().unwrap_or("");
             let (is_safe, warning, severity) = check_command(command);
-            
+
             json!({
                 "safe": is_safe,
                 "severity": severity,
                 "warning": warning,
                 "command": command
             })
-        },
+        }
         "security_audit_log" => {
             let lines = args["lines"].as_u64().unwrap_or(20) as usize;
             match std::fs::read_to_string(AUDIT_LOG) {
@@ -285,14 +319,14 @@ pub fn execute(name: &str, args: &Value) -> Value {
                         "count": entries.len(),
                         "log_path": AUDIT_LOG
                     })
-                },
+                }
                 Err(_) => json!({
                     "entries": [],
                     "count": 0,
                     "note": "No audit log yet"
-                })
+                }),
             }
-        },
-        _ => json!({"error": format!("Unknown security tool: {}", name)})
+        }
+        _ => json!({"error": format!("Unknown security tool: {}", name)}),
     }
 }

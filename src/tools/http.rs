@@ -30,7 +30,7 @@ pub fn get_definitions() -> Vec<Value> {
                 "properties": {
                     "url": { "type": "string", "description": "URL to fetch" },
                     "method": { "type": "string", "default": "GET", "description": "HTTP method" },
-                    "headers": { 
+                    "headers": {
                         "type": "object",
                         "description": "Custom headers as key-value pairs"
                     }
@@ -61,7 +61,7 @@ pub fn get_definitions() -> Vec<Value> {
                 },
                 "required": ["url", "path"]
             }
-        })
+        }),
     ]
 }
 
@@ -72,18 +72,22 @@ pub fn execute(name: &str, args: &Value) -> Value {
         "http_fetch" => http_fetch(args),
         "http_scrape" => http_scrape(args),
         "http_download" => http_download(args),
-        _ => json!({"error": format!("Unknown http tool: {}", name)})
+        _ => json!({"error": format!("Unknown http tool: {}", name)}),
     }
 }
 
 fn http_request(args: &Value) -> Value {
     let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
     let method = args.get("method").and_then(|v| v.as_str()).unwrap_or("GET");
-    let headers: std::collections::HashMap<String, String> = args.get("headers")
+    let headers: std::collections::HashMap<String, String> = args
+        .get("headers")
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
     let body = args.get("body").and_then(|v| v.as_str());
-    let timeout_secs = args.get("timeout_secs").and_then(|v| v.as_u64()).unwrap_or(30);
+    let timeout_secs = args
+        .get("timeout_secs")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(30);
 
     if url.is_empty() {
         return json!({"error": "url is required"});
@@ -121,7 +125,8 @@ fn http_request(args: &Value) -> Value {
         Ok(response) => {
             let elapsed = start.elapsed().as_millis() as u64;
             let status = response.status().as_u16();
-            let response_headers: std::collections::HashMap<String, String> = response.headers()
+            let response_headers: std::collections::HashMap<String, String> = response
+                .headers()
                 .iter()
                 .map(|(k, v)| (k.to_string(), v.to_str().unwrap_or("").to_string()))
                 .collect();
@@ -139,25 +144,24 @@ fn http_request(args: &Value) -> Value {
                 "response_time_ms": elapsed
             })
         }
-        Err(e) => json!({"error": format!("Request failed: {}", e)})
+        Err(e) => json!({"error": format!("Request failed: {}", e)}),
     }
 }
 
 fn http_fetch(args: &Value) -> Value {
     let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
     let method = args.get("method").and_then(|v| v.as_str()).unwrap_or("GET");
-    
+
     // Build headers string
     let headers_str = match args.get("headers").and_then(|v| v.as_object()) {
-        Some(headers) => {
-            headers.iter()
-                .map(|(k, v)| format!("-H '{}: {}'", k, v.as_str().unwrap_or("")))
-                .collect::<Vec<_>>()
-                .join(" ")
-        }
-        None => String::new()
+        Some(headers) => headers
+            .iter()
+            .map(|(k, v)| format!("-H '{}: {}'", k, v.as_str().unwrap_or("")))
+            .collect::<Vec<_>>()
+            .join(" "),
+        None => String::new(),
     };
-    
+
     // Use curl for HTTP (available on Windows 10+)
     let ps_cmd = format!(
         r#"
@@ -168,10 +172,15 @@ fn http_fetch(args: &Value) -> Value {
             "[ERROR] $_"
         }}
         "#,
-        url, method, 
-        if headers_str.is_empty() { "" } else { "-Headers @{}" }
+        url,
+        method,
+        if headers_str.is_empty() {
+            ""
+        } else {
+            "-Headers @{}"
+        }
     );
-    
+
     match Command::new("powershell")
         .args(["-Command", &ps_cmd])
         .output()
@@ -187,14 +196,14 @@ fn http_fetch(args: &Value) -> Value {
             };
             json!(content.trim())
         }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
 fn http_scrape(args: &Value) -> Value {
     let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
     let selector = args.get("selector").and_then(|v| v.as_str());
-    
+
     // PowerShell script to fetch and extract text
     let ps_cmd = if let Some(sel) = selector {
         format!(
@@ -230,7 +239,7 @@ fn http_scrape(args: &Value) -> Value {
             url
         )
     };
-    
+
     match Command::new("powershell")
         .args(["-Command", &ps_cmd])
         .output()
@@ -245,14 +254,14 @@ fn http_scrape(args: &Value) -> Value {
             };
             json!(content.trim())
         }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
 fn http_download(args: &Value) -> Value {
     let url = args.get("url").and_then(|v| v.as_str()).unwrap_or("");
     let path = args.get("path").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     let ps_cmd = format!(
         r#"
         try {{
@@ -265,7 +274,7 @@ fn http_download(args: &Value) -> Value {
         "#,
         url, path, path, path
     );
-    
+
     match Command::new("powershell")
         .args(["-Command", &ps_cmd])
         .output()
@@ -274,6 +283,6 @@ fn http_download(args: &Value) -> Value {
             let stdout = String::from_utf8_lossy(&output.stdout);
             json!(stdout.trim())
         }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }

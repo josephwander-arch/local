@@ -13,32 +13,42 @@ fn run_ps_script(script_path: &str) -> Result<String, String> {
         .args(["-ExecutionPolicy", "Bypass", "-File", script_path])
         .output()
         .map_err(|e| format!("Failed to execute: {}", e))?;
-    
+
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-    
+
     if output.status.success() {
         Ok(stdout.trim().to_string())
     } else {
-        Err(format!("Exit code {}: {}", output.status.code().unwrap_or(-1), stderr))
+        Err(format!(
+            "Exit code {}: {}",
+            output.status.code().unwrap_or(-1),
+            stderr
+        ))
     }
 }
 
 /// Run md2docx.bat with input and output paths
 fn run_md2docx(input: &str, output: &str) -> Result<String, String> {
     let bat_path = format!("{}\\md2docx.bat", SCRIPTS_DIR);
-    
+
     // Check input exists
     if !std::path::Path::new(input).exists() {
         return Err(format!("Input file not found: {}", input));
     }
-    
+
     let cmd_output = Command::new("cmd")
         .args(["/c", &bat_path, input, output])
-        .env("NODE_PATH", format!("{}\\npm\\node_modules", std::env::var("APPDATA").unwrap_or_default()))
+        .env(
+            "NODE_PATH",
+            format!(
+                "{}\\npm\\node_modules",
+                std::env::var("APPDATA").unwrap_or_default()
+            ),
+        )
         .output()
         .map_err(|e| format!("Failed to execute: {}", e))?;
-    
+
     if cmd_output.status.success() {
         // Check output was created
         if std::path::Path::new(output).exists() {
@@ -115,9 +125,9 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 Err(e) => json!({
                     "success": false,
                     "error": e
-                })
+                }),
             }
-        },
+        }
         "config_backup_operating" | "util_backup_operating" => {
             let script = format!("{}\\backup_operating.ps1", SCRIPTS_DIR);
             match run_ps_script(&script) {
@@ -128,9 +138,9 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 Err(e) => json!({
                     "success": false,
                     "error": e
-                })
+                }),
             }
-        },
+        }
         "config_validate" | "util_validate_config" => {
             let script = format!("{}\\validate_config.ps1", SCRIPTS_DIR);
             match run_ps_script(&script) {
@@ -143,20 +153,20 @@ pub fn execute(name: &str, args: &Value) -> Value {
                     "success": false,
                     "valid": false,
                     "error": e
-                })
+                }),
             }
-        },
+        }
         "md2docx" => {
             let input = args["input"].as_str().unwrap_or("");
             let output = args["output"].as_str().unwrap_or("");
-            
+
             if input.is_empty() || output.is_empty() {
                 return json!({
                     "success": false,
                     "error": "Both input and output paths required"
                 });
             }
-            
+
             match run_md2docx(input, output) {
                 Ok(msg) => json!({
                     "success": true,
@@ -165,10 +175,10 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 Err(e) => json!({
                     "success": false,
                     "error": e
-                })
+                }),
             }
-        },
-        _ => json!({"error": format!("Unknown util tool: {}", name)})
+        }
+        _ => json!({"error": format!("Unknown util tool: {}", name)}),
     }
 }
 

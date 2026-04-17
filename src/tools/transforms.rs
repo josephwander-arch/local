@@ -1,11 +1,11 @@
 //! Transform utilities - data conversion without external scripts
 //! Saves tokens by providing direct transforms instead of PowerShell
 
-use serde_json::{json, Value};
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use std::path::Path;
-use std::io::{BufRead, BufReader};
 use super::auto_backup;
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use serde_json::{json, Value};
+use std::io::{BufRead, BufReader};
+use std::path::Path;
 
 /// Tool definitions for transforms
 pub fn get_definitions() -> Vec<Value> {
@@ -80,7 +80,6 @@ pub fn get_definitions() -> Vec<Value> {
                 "required": ["json_array"]
             }
         }),
-        
         // === FILE OPERATIONS (token savers) ===
         json!({
             "name": "transform_diff_file",
@@ -175,7 +174,6 @@ pub fn get_definitions() -> Vec<Value> {
                 "required": ["path", "pattern"]
             }
         }),
-        
         // === SCAFFOLDING ===
         json!({
             "name": "transform_scaffold",
@@ -265,13 +263,21 @@ fn csv_to_json(args: &Value) -> Value {
         Some(s) => s,
         None => return json!({"error": "csv_string required"}),
     };
-    let delim = args["delimiter"].as_str().unwrap_or(",").chars().next().unwrap_or(',');
-    
+    let delim = args["delimiter"]
+        .as_str()
+        .unwrap_or(",")
+        .chars()
+        .next()
+        .unwrap_or(',');
+
     let lines: Vec<&str> = csv.lines().collect();
-    if lines.is_empty() { return json!({"error": "Empty CSV"}); }
-    
+    if lines.is_empty() {
+        return json!({"error": "Empty CSV"});
+    }
+
     let headers: Vec<&str> = lines[0].split(delim).map(|s| s.trim()).collect();
-    let records: Vec<Value> = lines[1..].iter()
+    let records: Vec<Value> = lines[1..]
+        .iter()
         .filter(|l| !l.trim().is_empty())
         .map(|line| {
             let vals: Vec<&str> = line.split(delim).map(|s| s.trim()).collect();
@@ -281,8 +287,9 @@ fn csv_to_json(args: &Value) -> Value {
                 map.insert(h.to_string(), json!(v));
             }
             Value::Object(map)
-        }).collect();
-    
+        })
+        .collect();
+
     json!({"records": records, "count": records.len()})
 }
 
@@ -292,23 +299,26 @@ fn json_to_csv(args: &Value) -> Value {
         None => return json!({"error": "json_array required"}),
     };
     let delim = args["delimiter"].as_str().unwrap_or(",");
-    
+
     let array: Vec<Value> = match serde_json::from_str(json_str) {
         Ok(a) => a,
         Err(e) => return json!({"error": format!("Invalid JSON: {}", e)}),
     };
-    
-    if array.is_empty() { return json!({"csv": "", "rows": 0}); }
-    
+
+    if array.is_empty() {
+        return json!({"csv": "", "rows": 0});
+    }
+
     let headers: Vec<String> = match &array[0] {
         Value::Object(obj) => obj.keys().cloned().collect(),
         _ => return json!({"error": "Array must contain objects"}),
     };
-    
+
     let mut lines = vec![headers.join(delim)];
     for item in &array {
         if let Value::Object(obj) = item {
-            let vals: Vec<String> = headers.iter()
+            let vals: Vec<String> = headers
+                .iter()
                 .map(|h| obj.get(h).map(|v| v.to_string()).unwrap_or_default())
                 .collect();
             lines.push(vals.join(delim));
@@ -326,7 +336,7 @@ fn diff_files(args: &Value) -> Value {
         Some(s) => s,
         None => return json!({"error": "file_b required"}),
     };
-    
+
     let content_a = match std::fs::read_to_string(file_a) {
         Ok(c) => c,
         Err(e) => return json!({"error": format!("Can't read {}: {}", file_a, e)}),
@@ -335,36 +345,36 @@ fn diff_files(args: &Value) -> Value {
         Ok(c) => c,
         Err(e) => return json!({"error": format!("Can't read {}: {}", file_b, e)}),
     };
-    
+
     let lines_a: Vec<&str> = content_a.lines().collect();
     let lines_b: Vec<&str> = content_b.lines().collect();
-    
+
     // Simple line-by-line diff
     let mut diff_lines: Vec<String> = Vec::new();
     let max_len = lines_a.len().max(lines_b.len());
     let mut changes = 0;
-    
+
     for i in 0..max_len {
         let a = lines_a.get(i);
         let b = lines_b.get(i);
         match (a, b) {
             (Some(la), Some(lb)) if la != lb => {
-                diff_lines.push(format!("{}:- {}", i+1, la));
-                diff_lines.push(format!("{}:+ {}", i+1, lb));
+                diff_lines.push(format!("{}:- {}", i + 1, la));
+                diff_lines.push(format!("{}:+ {}", i + 1, lb));
                 changes += 1;
             }
             (Some(la), None) => {
-                diff_lines.push(format!("{}:- {}", i+1, la));
+                diff_lines.push(format!("{}:- {}", i + 1, la));
                 changes += 1;
             }
             (None, Some(lb)) => {
-                diff_lines.push(format!("{}:+ {}", i+1, lb));
+                diff_lines.push(format!("{}:+ {}", i + 1, lb));
                 changes += 1;
             }
             _ => {}
         }
     }
-    
+
     json!({
         "diff": diff_lines.join("\n"),
         "changes": changes,
@@ -387,20 +397,20 @@ fn bulk_rename(args: &Value) -> Value {
         None => return json!({"error": "replacement required"}),
     };
     let execute = args["execute"].as_bool().unwrap_or(false);
-    
+
     let re = match regex::Regex::new(pattern) {
         Ok(r) => r,
         Err(e) => return json!({"error": format!("Invalid regex: {}", e)}),
     };
-    
+
     let entries = match std::fs::read_dir(dir) {
         Ok(e) => e,
         Err(e) => return json!({"error": format!("Can't read dir: {}", e)}),
     };
-    
+
     let mut renames: Vec<Value> = Vec::new();
     let mut errors: Vec<String> = Vec::new();
-    
+
     for entry in entries.flatten() {
         let name = entry.file_name().to_string_lossy().to_string();
         if re.is_match(&name) {
@@ -408,7 +418,7 @@ fn bulk_rename(args: &Value) -> Value {
             if new_name != name {
                 let old_path = entry.path();
                 let new_path = old_path.parent().unwrap().join(&new_name);
-                
+
                 if execute {
                     if let Err(e) = std::fs::rename(&old_path, &new_path) {
                         errors.push(format!("{} -> {}: {}", name, new_name, e));
@@ -421,7 +431,7 @@ fn bulk_rename(args: &Value) -> Value {
             }
         }
     }
-    
+
     json!({
         "renames": renames,
         "count": renames.len(),
@@ -444,12 +454,12 @@ fn find_replace(args: &Value) -> Value {
         None => return json!({"error": "replace required"}),
     };
     let use_regex = args["regex"].as_bool().unwrap_or(false);
-    
+
     let content = match std::fs::read_to_string(path) {
         Ok(c) => c,
         Err(e) => return json!({"error": format!("Can't read: {}", e)}),
     };
-    
+
     let (new_content, count) = if use_regex {
         match regex::Regex::new(find) {
             Ok(re) => {
@@ -462,7 +472,7 @@ fn find_replace(args: &Value) -> Value {
         let count = content.matches(find).count();
         (content.replace(find, replace), count)
     };
-    
+
     if count > 0 {
         // Auto-backup before write
         auto_backup::backup_if_exists(path);
@@ -470,7 +480,7 @@ fn find_replace(args: &Value) -> Value {
             return json!({"error": format!("Can't write: {}", e)});
         }
     }
-    
+
     json!({"path": path, "replacements": count})
 }
 
@@ -480,21 +490,24 @@ fn hash_file(args: &Value) -> Value {
         None => return json!({"error": "path required"}),
     };
     let algorithm = args["algorithm"].as_str().unwrap_or("sha256");
-    
+
     let content = match std::fs::read(path) {
         Ok(c) => c,
         Err(e) => return json!({"error": format!("Can't read: {}", e)}),
     };
-    
+
     // Use PowerShell for hashing since we don't have crypto deps
     let algo_upper = algorithm.to_uppercase();
     let result = std::process::Command::new("powershell.exe")
-        .args(&["-Command", &format!(
-            "(Get-FileHash -Path '{}' -Algorithm {}).Hash",
-            path, algo_upper
-        )])
+        .args(&[
+            "-Command",
+            &format!(
+                "(Get-FileHash -Path '{}' -Algorithm {}).Hash",
+                path, algo_upper
+            ),
+        ])
         .output();
-    
+
     match result {
         Ok(output) => {
             let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -515,12 +528,12 @@ fn file_stats(args: &Value) -> Value {
         None => return json!({"error": "path required"}),
     };
     let recursive = args["recursive"].as_bool().unwrap_or(false);
-    
+
     let meta = match std::fs::metadata(path) {
         Ok(m) => m,
         Err(e) => return json!({"error": format!("Can't stat: {}", e)}),
     };
-    
+
     if meta.is_file() {
         json!({
             "type": "file",
@@ -532,7 +545,7 @@ fn file_stats(args: &Value) -> Value {
         let mut total_size: u64 = 0;
         let mut file_count: u64 = 0;
         let mut dir_count: u64 = 0;
-        
+
         fn walk(p: &Path, recursive: bool, total: &mut u64, files: &mut u64, dirs: &mut u64) {
             if let Ok(entries) = std::fs::read_dir(p) {
                 for entry in entries.flatten() {
@@ -550,9 +563,15 @@ fn file_stats(args: &Value) -> Value {
                 }
             }
         }
-        
-        walk(Path::new(path), recursive, &mut total_size, &mut file_count, &mut dir_count);
-        
+
+        walk(
+            Path::new(path),
+            recursive,
+            &mut total_size,
+            &mut file_count,
+            &mut dir_count,
+        );
+
         json!({
             "type": "directory",
             "path": path,
@@ -569,11 +588,16 @@ fn format_size(bytes: u64) -> String {
     const KB: u64 = 1024;
     const MB: u64 = KB * 1024;
     const GB: u64 = MB * 1024;
-    
-    if bytes >= GB { format!("{:.2} GB", bytes as f64 / GB as f64) }
-    else if bytes >= MB { format!("{:.2} MB", bytes as f64 / MB as f64) }
-    else if bytes >= KB { format!("{:.2} KB", bytes as f64 / KB as f64) }
-    else { format!("{} B", bytes) }
+
+    if bytes >= GB {
+        format!("{:.2} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.2} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.2} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
 }
 
 fn extract_lines(args: &Value) -> Value {
@@ -583,22 +607,27 @@ fn extract_lines(args: &Value) -> Value {
     };
     let start = args["start"].as_i64().unwrap_or(1) as usize;
     let end = args["end"].as_i64().unwrap_or(-1);
-    
+
     let file = match std::fs::File::open(path) {
         Ok(f) => f,
         Err(e) => return json!({"error": format!("Can't open: {}", e)}),
     };
-    
+
     let reader = BufReader::new(file);
-    let lines: Vec<String> = reader.lines()
+    let lines: Vec<String> = reader
+        .lines()
         .enumerate()
         .filter_map(|(i, line)| {
             let line_num = i + 1;
             let in_range = line_num >= start && (end < 0 || line_num <= end as usize);
-            if in_range { line.ok() } else { None }
+            if in_range {
+                line.ok()
+            } else {
+                None
+            }
         })
         .collect();
-    
+
     json!({
         "path": path,
         "start": start,
@@ -618,20 +647,20 @@ fn grep(args: &Value) -> Value {
         None => return json!({"error": "pattern required"}),
     };
     let context = args["context"].as_u64().unwrap_or(0) as usize;
-    
+
     let re = match regex::Regex::new(pattern) {
         Ok(r) => r,
         Err(e) => return json!({"error": format!("Invalid regex: {}", e)}),
     };
-    
+
     let content = match std::fs::read_to_string(path) {
         Ok(c) => c,
         Err(e) => return json!({"error": format!("Can't read: {}", e)}),
     };
-    
+
     let lines: Vec<&str> = content.lines().collect();
     let mut matches: Vec<Value> = Vec::new();
-    
+
     for (i, line) in lines.iter().enumerate() {
         if re.is_match(line) {
             let start = i.saturating_sub(context);
@@ -641,7 +670,7 @@ fn grep(args: &Value) -> Value {
                 .enumerate()
                 .map(|(j, l)| format!("{}: {}", start + j + 1, l))
                 .collect();
-            
+
             matches.push(json!({
                 "line": i + 1,
                 "match": line,
@@ -649,7 +678,7 @@ fn grep(args: &Value) -> Value {
             }));
         }
     }
-    
+
     json!({"path": path, "pattern": pattern, "matches": matches, "count": matches.len()})
 }
 
@@ -663,22 +692,24 @@ fn scaffold(args: &Value) -> Value {
         None => return json!({"error": "name required"}),
     };
     let output = args["output_dir"].as_str().unwrap_or(".");
-    
+
     let base_path = Path::new(output).join(name);
-    
+
     // Create directory
     if let Err(e) = std::fs::create_dir_all(&base_path) {
         return json!({"error": format!("Can't create dir: {}", e)});
     }
-    
+
     let files_created: Vec<String> = match template {
         "rust-mcp" => scaffold_rust_mcp(&base_path, name),
         "python-mcp" => scaffold_python_mcp(&base_path, name),
         "nextjs" => scaffold_nextjs(&base_path, name),
         "fastapi" => scaffold_fastapi(&base_path, name),
-        _ => return json!({"error": format!("Unknown template: {}. Use: rust-mcp, python-mcp, nextjs, fastapi", template)}),
+        _ => {
+            return json!({"error": format!("Unknown template: {}. Use: rust-mcp, python-mcp, nextjs, fastapi", template)})
+        }
     };
-    
+
     json!({
         "template": template,
         "name": name,
@@ -689,9 +720,10 @@ fn scaffold(args: &Value) -> Value {
 
 fn scaffold_rust_mcp(base: &Path, name: &str) -> Vec<String> {
     let mut files = Vec::new();
-    
+
     // Cargo.toml
-    let cargo = format!(r#"[package]
+    let cargo = format!(
+        r#"[package]
 name = "{}"
 version = "0.1.0"
 edition = "2021"
@@ -701,9 +733,11 @@ tokio = {{ version = "1.35", features = ["full"] }}
 serde = {{ version = "1.0", features = ["derive"] }}
 serde_json = "1.0"
 chrono = {{ version = "0.4", features = ["serde"] }}
-"#, name);
+"#,
+        name
+    );
     write_file(&base.join("Cargo.toml"), &cargo, &mut files);
-    
+
     // src/main.rs
     let main = r#"use std::io::{self, BufRead, Write};
 use serde_json::{json, Value};
@@ -743,7 +777,7 @@ fn handle_request(request: &Value) -> Value {
 "#;
     std::fs::create_dir_all(base.join("src")).ok();
     write_file(&base.join("src/main.rs"), main, &mut files);
-    
+
     // src/tools/mod.rs
     let tools_mod = r#"use serde_json::{json, Value};
 
@@ -775,14 +809,15 @@ pub fn execute(name: &str, args: &Value) -> Value {
 "#;
     std::fs::create_dir_all(base.join("src/tools")).ok();
     write_file(&base.join("src/tools/mod.rs"), tools_mod, &mut files);
-    
+
     files
 }
 
 fn scaffold_python_mcp(base: &Path, name: &str) -> Vec<String> {
     let mut files = Vec::new();
-    
-    let server = format!(r#"#!/usr/bin/env python3
+
+    let server = format!(
+        r#"#!/usr/bin/env python3
 """MCP Server: {}"""
 import asyncio
 from mcp.server import Server
@@ -808,19 +843,22 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-"#, name, name);
+"#,
+        name, name
+    );
     write_file(&base.join("server.py"), &server, &mut files);
-    
+
     let req = "mcp>=1.0.0\n";
     write_file(&base.join("requirements.txt"), req, &mut files);
-    
+
     files
 }
 
 fn scaffold_nextjs(base: &Path, name: &str) -> Vec<String> {
     let mut files = Vec::new();
-    
-    let package = format!(r#"{{
+
+    let package = format!(
+        r#"{{
   "name": "{}",
   "version": "0.1.0",
   "scripts": {{
@@ -834,29 +872,32 @@ fn scaffold_nextjs(base: &Path, name: &str) -> Vec<String> {
     "react-dom": "^18.2.0"
   }}
 }}
-"#, name);
+"#,
+        name
+    );
     write_file(&base.join("package.json"), &package, &mut files);
-    
+
     std::fs::create_dir_all(base.join("app")).ok();
     let page = r#"export default function Home() {
   return <main><h1>Hello World</h1></main>
 }
 "#;
     write_file(&base.join("app/page.tsx"), page, &mut files);
-    
+
     let layout = r#"export default function RootLayout({ children }: { children: React.ReactNode }) {
   return <html><body>{children}</body></html>
 }
 "#;
     write_file(&base.join("app/layout.tsx"), layout, &mut files);
-    
+
     files
 }
 
 fn scaffold_fastapi(base: &Path, name: &str) -> Vec<String> {
     let mut files = Vec::new();
-    
-    let main = format!(r#"from fastapi import FastAPI
+
+    let main = format!(
+        r#"from fastapi import FastAPI
 
 app = FastAPI(title="{}")
 
@@ -867,12 +908,14 @@ def root():
 @app.get("/health")
 def health():
     return {{"status": "ok"}}
-"#, name);
+"#,
+        name
+    );
     write_file(&base.join("main.py"), &main, &mut files);
-    
+
     let req = "fastapi>=0.100.0\nuvicorn>=0.23.0\n";
     write_file(&base.join("requirements.txt"), req, &mut files);
-    
+
     files
 }
 
@@ -882,6 +925,6 @@ fn write_file(path: &Path, content: &str, files: &mut Vec<String>) -> bool {
             files.push(path.to_string_lossy().to_string());
             true
         }
-        Err(_) => false
+        Err(_) => false,
     }
 }

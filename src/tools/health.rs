@@ -2,11 +2,12 @@
 //! Reads tool_fallback_map.json for cross-server awareness
 
 use chrono;
+use cpc_breadcrumbs;
 use serde_json::{json, Value};
 use std::process::Command;
-use cpc_breadcrumbs;
 
-const FALLBACK_MAP_PATH: &str = "C:\\My Drive\\Volumes\\system_architecture\\tool_fallback_map.json";
+const FALLBACK_MAP_PATH: &str =
+    "C:\\My Drive\\Volumes\\system_architecture\\tool_fallback_map.json";
 
 // ── local_health helpers ───────────────────────────────────────────────────────
 
@@ -67,8 +68,7 @@ fn is_process_running(name: &str) -> bool {
 fn load_fallback_map() -> Result<Value, String> {
     let content = std::fs::read_to_string(FALLBACK_MAP_PATH)
         .map_err(|e| format!("Cannot read fallback map: {}", e))?;
-    serde_json::from_str(&content)
-        .map_err(|e| format!("Invalid JSON in fallback map: {}", e))
+    serde_json::from_str(&content).map_err(|e| format!("Invalid JSON in fallback map: {}", e))
 }
 
 pub fn get_definitions() -> Vec<Value> {
@@ -136,7 +136,8 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 Err(e) => return json!({"error": e}),
             };
 
-            let filter: Option<Vec<String>> = args.get("servers")
+            let filter: Option<Vec<String>> = args
+                .get("servers")
                 .and_then(|s| serde_json::from_value(s.clone()).ok());
 
             let servers = match map.get("servers").and_then(|s| s.as_object()) {
@@ -155,27 +156,37 @@ pub fn execute(name: &str, args: &Value) -> Value {
                     }
                 }
 
-                let process = config.get("process")
+                let process = config
+                    .get("process")
                     .and_then(|p| p.as_str())
                     .unwrap_or("unknown");
 
                 let alive = is_process_running(process);
-                if alive { alive_count += 1; } else { dead_count += 1; }
+                if alive {
+                    alive_count += 1;
+                } else {
+                    dead_count += 1;
+                }
 
-                let mirror = config.get("mirror")
+                let mirror = config
+                    .get("mirror")
                     .and_then(|m| m.as_str())
                     .unwrap_or("none");
 
-                let critical = config.get("critical")
+                let critical = config
+                    .get("critical")
                     .and_then(|c| c.as_bool())
                     .unwrap_or(false);
 
-                results.insert(name.clone(), json!({
-                    "alive": alive,
-                    "process": process,
-                    "mirror": mirror,
-                    "critical": critical
-                }));
+                results.insert(
+                    name.clone(),
+                    json!({
+                        "alive": alive,
+                        "process": process,
+                        "mirror": mirror,
+                        "critical": critical
+                    }),
+                );
             }
 
             json!({
@@ -186,7 +197,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
                     "total": alive_count + dead_count
                 }
             })
-        },
+        }
 
         "tool_fallback" => {
             let tool = match args.get("tool").and_then(|t| t.as_str()) {
@@ -200,7 +211,11 @@ pub fn execute(name: &str, args: &Value) -> Value {
             };
 
             // Check equivalents first (bidirectional mirror tools)
-            if let Some(equiv) = map.get("equivalents").and_then(|e| e.get(tool)).and_then(|v| v.as_str()) {
+            if let Some(equiv) = map
+                .get("equivalents")
+                .and_then(|e| e.get(tool))
+                .and_then(|v| v.as_str())
+            {
                 return json!({
                     "tool": tool,
                     "fallback": equiv,
@@ -210,10 +225,12 @@ pub fn execute(name: &str, args: &Value) -> Value {
             }
 
             // Check fallback chains
-            if let Some(chain) = map.get("fallback_chains").and_then(|c| c.get(tool)).and_then(|v| v.as_array()) {
-                let fallbacks: Vec<&str> = chain.iter()
-                    .filter_map(|v| v.as_str())
-                    .collect();
+            if let Some(chain) = map
+                .get("fallback_chains")
+                .and_then(|c| c.get(tool))
+                .and_then(|v| v.as_array())
+            {
+                let fallbacks: Vec<&str> = chain.iter().filter_map(|v| v.as_str()).collect();
                 return json!({
                     "tool": tool,
                     "fallbacks": fallbacks,
@@ -225,7 +242,9 @@ pub fn execute(name: &str, args: &Value) -> Value {
             // Try reverse lookup in equivalents (tool might be the value, not the key)
             if let Some(equivs) = map.get("equivalents").and_then(|e| e.as_object()) {
                 for (key, val) in equivs {
-                    if key.starts_with('_') { continue; }
+                    if key.starts_with('_') {
+                        continue;
+                    }
                     if val.as_str() == Some(tool) {
                         return json!({
                             "tool": tool,
@@ -243,7 +262,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 "type": "none",
                 "note": "No fallback registered for this tool"
             })
-        },
+        }
 
         "deploy_preflight" | "preflight_deploy" => {
             let target = match args.get("target").and_then(|t| t.as_str()) {
@@ -257,8 +276,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
             };
 
             // Get deploy sequence for target
-            let deploy_seq = map.get("deploy_sequence")
-                .and_then(|d| d.get(target));
+            let deploy_seq = map.get("deploy_sequence").and_then(|d| d.get(target));
 
             let pre_kill_steps = deploy_seq
                 .and_then(|d| d.get("pre_kill"))
@@ -279,7 +297,8 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 .and_then(|m| m.as_str());
 
             let mirror_alive = if let Some(mirror) = mirror_name {
-                let mirror_process = map.get("servers")
+                let mirror_process = map
+                    .get("servers")
                     .and_then(|s| s.get(mirror))
                     .and_then(|s| s.get("process"))
                     .and_then(|p| p.as_str())
@@ -303,8 +322,11 @@ pub fn execute(name: &str, args: &Value) -> Value {
 
             let mut warnings = Vec::new();
             if critical && !mirror_alive && mirror_name.is_some() {
-                warnings.push(format!("BLOCK: Mirror '{}' is DOWN. Cannot safely kill critical server '{}'.", 
-                    mirror_name.unwrap_or("unknown"), target));
+                warnings.push(format!(
+                    "BLOCK: Mirror '{}' is DOWN. Cannot safely kill critical server '{}'.",
+                    mirror_name.unwrap_or("unknown"),
+                    target
+                ));
             }
             if target == "learning2t" {
                 warnings.push("Remember: breadcrumb_backup via utonomous BEFORE kill".to_string());
@@ -320,7 +342,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
                 "post_restart_steps": post_restart_steps,
                 "warnings": warnings
             })
-        },
+        }
 
         _ => json!({"error": format!("Unknown health tool: {}", name)}),
     }
@@ -339,8 +361,14 @@ mod tests {
         assert_eq!(result["server"], "local", "server field must be 'local'");
         assert_eq!(result["version"], "1.2.10", "version must be '1.2.10'");
         assert!(result.get("paths").is_some(), "paths field must be present");
-        assert!(result.get("breadcrumbs").is_some(), "breadcrumbs field must be present");
-        assert!(result.get("sessions").is_some(), "sessions field must be present");
+        assert!(
+            result.get("breadcrumbs").is_some(),
+            "breadcrumbs field must be present"
+        );
+        assert!(
+            result.get("sessions").is_some(),
+            "sessions field must be present"
+        );
     }
 
     #[test]
@@ -349,11 +377,26 @@ mod tests {
         let paths = &result["paths"];
 
         // HealthReport fields from cpc-paths
-        assert!(paths.get("platform").is_some(), "paths.platform must be present");
-        assert!(paths.get("crate_version").is_some(), "paths.crate_version must be present");
-        assert!(paths.get("volumes").is_some(), "paths.volumes must be present");
-        assert!(paths.get("install").is_some(), "paths.install must be present");
-        assert!(paths.get("backups").is_some(), "paths.backups must be present");
+        assert!(
+            paths.get("platform").is_some(),
+            "paths.platform must be present"
+        );
+        assert!(
+            paths.get("crate_version").is_some(),
+            "paths.crate_version must be present"
+        );
+        assert!(
+            paths.get("volumes").is_some(),
+            "paths.volumes must be present"
+        );
+        assert!(
+            paths.get("install").is_some(),
+            "paths.install must be present"
+        );
+        assert!(
+            paths.get("backups").is_some(),
+            "paths.backups must be present"
+        );
     }
 
     #[test]
@@ -386,8 +429,14 @@ mod tests {
     fn test_local_health_via_execute() {
         // Verify execute() routing reaches local_health
         let result = execute("local_health", &json!({}));
-        assert_eq!(result["server"], "local", "execute('local_health') must reach local_health()");
-        assert!(result.get("error").is_none(), "execute('local_health') must not return error");
+        assert_eq!(
+            result["server"], "local",
+            "execute('local_health') must reach local_health()"
+        );
+        assert!(
+            result.get("error").is_none(),
+            "execute('local_health') must not return error"
+        );
     }
 
     /// Verify active_count reflects truth: delegates to cpc_breadcrumbs::active_count()
@@ -404,9 +453,13 @@ mod tests {
 
         // Verify local_health surfaces the same count
         let result = local_health();
-        let reported = result["breadcrumbs"]["active_count"].as_u64()
+        let reported = result["breadcrumbs"]["active_count"]
+            .as_u64()
             .expect("breadcrumbs.active_count must be a u64");
-        assert_eq!(reported as usize, count_active_breadcrumbs(),
-            "local_health active_count must match cpc_breadcrumbs::active_count()");
+        assert_eq!(
+            reported as usize,
+            count_active_breadcrumbs(),
+            "local_health active_count must match cpc_breadcrumbs::active_count()"
+        );
     }
 }

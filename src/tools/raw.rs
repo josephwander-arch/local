@@ -1,13 +1,13 @@
 //! Raw tools - Zero metadata overhead execution
 //! Ports from raw-tools Python server
 
-use serde_json::{json, Value};
-use std::process::Command;
-use std::fs;
-use std::path::Path;
-use std::io::{BufRead, BufReader};
-use super::log;
 use super::auto_backup;
+use super::log;
+use serde_json::{json, Value};
+use std::fs;
+use std::io::{BufRead, BufReader};
+use std::path::Path;
+use std::process::Command;
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
@@ -34,7 +34,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "commands": { 
+                    "commands": {
                         "type": "array",
                         "items": { "type": "string" },
                         "description": "Commands to execute in order"
@@ -278,17 +278,17 @@ pub fn execute(name: &str, args: &Value) -> Value {
         "recovery_clear" | "clear_recovery" => clear_recovery(args),
         "port_check" => port_check(args),
         "tail_file" => tail_file(args),
-        _ => json!({"error": format!("Unknown raw tool: {}", name)})
+        _ => json!({"error": format!("Unknown raw tool: {}", name)}),
     }
 }
 
 fn raw_run(args: &Value) -> Value {
     let command = args.get("command").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     match Command::new("cmd")
         .args(["/C", command])
-         .creation_flags(CREATE_NO_WINDOW)
-        .output() 
+        .creation_flags(CREATE_NO_WINDOW)
+        .output()
     {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -311,9 +311,9 @@ fn raw_run(args: &Value) -> Value {
 fn raw_chain(args: &Value) -> Value {
     let commands = match args.get("commands").and_then(|v| v.as_array()) {
         Some(arr) => arr,
-        None => return json!("[ERROR] commands must be array")
+        None => return json!("[ERROR] commands must be array"),
     };
-    
+
     for (i, cmd) in commands.iter().enumerate() {
         let cmd_str = cmd.as_str().unwrap_or("");
         match Command::new("cmd")
@@ -327,10 +327,10 @@ fn raw_chain(args: &Value) -> Value {
                     return json!(format!("[ERROR] Step {} failed: {}", i + 1, stderr.trim()));
                 }
             }
-            Err(e) => return json!(format!("[ERROR] Step {}: {}", i + 1, e))
+            Err(e) => return json!(format!("[ERROR] Step {}: {}", i + 1, e)),
         }
     }
-    
+
     json!("success")
 }
 
@@ -343,30 +343,30 @@ fn raw_read(args: &Value) -> Value {
     let search = args.get("search").and_then(|v| v.as_str());
     let lines_param = args.get("lines").and_then(|v| v.as_str());
     let max_kb = args.get("max_kb").and_then(|v| v.as_i64()).unwrap_or(100);
-    
+
     // Check file exists
     let file_path = Path::new(path);
     if !file_path.exists() {
         return json!(format!("[ERROR] File not found: {}", path));
     }
-    
+
     // Get file size
     let file_size = match fs::metadata(path) {
         Ok(m) => m.len(),
-        Err(e) => return json!(format!("[ERROR] {}", e))
+        Err(e) => return json!(format!("[ERROR] {}", e)),
     };
     let file_kb = file_size / 1024;
-    
+
     // SEARCH MODE: grep for pattern
     if let Some(pattern) = search {
         return raw_read_search(path, pattern);
     }
-    
+
     // LINES MODE: extract specific lines
     if let Some(range) = lines_param {
         return raw_read_lines(path, range);
     }
-    
+
     // FULL READ with size check
     match fs::read_to_string(path) {
         Ok(content) => {
@@ -384,21 +384,21 @@ fn raw_read(args: &Value) -> Value {
                 json!(content)
             }
         }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
 fn raw_read_search(path: &str, pattern: &str) -> Value {
     let file = match fs::File::open(path) {
         Ok(f) => f,
-        Err(e) => return json!(format!("[ERROR] {}", e))
+        Err(e) => return json!(format!("[ERROR] {}", e)),
     };
-    
+
     let reader = BufReader::new(file);
     let pattern_lower = pattern.to_lowercase();
     let mut matches: Vec<String> = Vec::new();
     let mut total_lines = 0;
-    
+
     for (i, line) in reader.lines().enumerate() {
         total_lines = i + 1;
         if let Ok(text) = line {
@@ -412,11 +412,19 @@ fn raw_read_search(path: &str, pattern: &str) -> Value {
             break;
         }
     }
-    
+
     if matches.is_empty() {
-        json!(format!("[NO MATCHES] '{}' not found in {} lines", pattern, total_lines))
+        json!(format!(
+            "[NO MATCHES] '{}' not found in {} lines",
+            pattern, total_lines
+        ))
     } else {
-        json!(format!("[{} matches in {} lines]\n{}", matches.len(), total_lines, matches.join("\n")))
+        json!(format!(
+            "[{} matches in {} lines]\n{}",
+            matches.len(),
+            total_lines,
+            matches.join("\n")
+        ))
     }
 }
 
@@ -426,39 +434,45 @@ fn raw_read_lines(path: &str, range: &str) -> Value {
     if parts.len() != 2 {
         return json!("[ERROR] lines format: 'start:end' e.g. '50:100'");
     }
-    
+
     let start: usize = parts[0].parse().unwrap_or(1);
     let end: usize = parts[1].parse().unwrap_or(50);
-    
+
     if start < 1 || end < start {
         return json!("[ERROR] Invalid line range");
     }
-    
+
     let file = match fs::File::open(path) {
         Ok(f) => f,
-        Err(e) => return json!(format!("[ERROR] {}", e))
+        Err(e) => return json!(format!("[ERROR] {}", e)),
     };
-    
+
     let reader = BufReader::new(file);
     let mut result: Vec<String> = Vec::new();
     let mut total_lines = 0;
-    
+
     for (i, line) in reader.lines().enumerate() {
         let line_num = i + 1;
         total_lines = line_num;
-        
+
         if line_num >= start && line_num <= end {
             if let Ok(text) = line {
                 result.push(format!("{}:{}", line_num, text));
             }
         }
-        
+
         if line_num > end {
             break;
         }
     }
-    
-    json!(format!("[Lines {}-{} of {}]\n{}", start, end.min(total_lines), total_lines, result.join("\n")))
+
+    json!(format!(
+        "[Lines {}-{} of {}]\n{}",
+        start,
+        end.min(total_lines),
+        total_lines,
+        result.join("\n")
+    ))
 }
 
 fn raw_write(args: &Value) -> Value {
@@ -468,18 +482,18 @@ fn raw_write(args: &Value) -> Value {
         return json!(format!("[BLOCKED] {}", msg));
     }
     let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     // Auto-backup if file exists
     auto_backup::backup_if_exists(path);
-    
+
     // Create parent directories
     if let Some(parent) = Path::new(path).parent() {
         let _ = fs::create_dir_all(parent);
     }
-    
+
     match fs::write(path, content) {
         Ok(_) => json!(format!("written: {}", path)),
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
@@ -490,54 +504,58 @@ fn raw_append(args: &Value) -> Value {
         return json!(format!("[BLOCKED] {}", msg));
     }
     let content = args.get("content").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     // Auto-backup if file exists
     auto_backup::backup_if_exists(path);
-    
+
     use std::io::Write;
     match std::fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(path)
     {
-        Ok(mut file) => {
-            match file.write_all(content.as_bytes()) {
-                Ok(_) => json!(format!("appended: {}", path)),
-                Err(e) => json!(format!("[ERROR] {}", e))
-            }
-        }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Ok(mut file) => match file.write_all(content.as_bytes()) {
+            Ok(_) => json!(format!("appended: {}", path)),
+            Err(e) => json!(format!("[ERROR] {}", e)),
+        },
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
 fn raw_list(args: &Value) -> Value {
     let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
     let depth = args.get("depth").and_then(|v| v.as_i64()).unwrap_or(2) as usize;
-    
+
     let mut output = Vec::new();
     list_recursive(Path::new(path), path, depth, 0, &mut output);
-    
+
     json!(output.join("\n"))
 }
 
-fn list_recursive(base: &Path, root: &str, max_depth: usize, current_depth: usize, output: &mut Vec<String>) {
+fn list_recursive(
+    base: &Path,
+    root: &str,
+    max_depth: usize,
+    current_depth: usize,
+    output: &mut Vec<String>,
+) {
     if current_depth > max_depth {
         return;
     }
-    
+
     let entries = match fs::read_dir(base) {
         Ok(e) => e,
         Err(_) => return,
     };
-    
+
     let mut items: Vec<_> = entries.filter_map(|e| e.ok()).collect();
     items.sort_by_key(|e| e.file_name());
-    
+
     for entry in items.iter().take(100) {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().to_string();
         let prefix = "  ".repeat(current_depth);
-        
+
         if path.is_dir() {
             output.push(format!("{}{}/", prefix, name));
             if current_depth < max_depth {
@@ -551,13 +569,13 @@ fn list_recursive(base: &Path, root: &str, max_depth: usize, current_depth: usiz
 
 fn raw_ps(args: &Value) -> Value {
     let filter = args.get("filter").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     let ps_cmd = if filter.is_empty() {
         "Get-Process | Select-Object ProcessName, Id | Format-Table -Auto".to_string()
     } else {
         format!("Get-Process | Where-Object {{ $_.ProcessName -like '*{}*' }} | Select-Object ProcessName, Id | Format-Table -Auto", filter)
     };
-    
+
     match Command::new("powershell")
         .args(["-Command", &ps_cmd])
         .creation_flags(CREATE_NO_WINDOW)
@@ -567,13 +585,13 @@ fn raw_ps(args: &Value) -> Value {
             let stdout = String::from_utf8_lossy(&output.stdout);
             json!(stdout.trim())
         }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
 fn raw_kill(args: &Value) -> Value {
     let pid = args.get("pid").and_then(|v| v.as_i64()).unwrap_or(0);
-    
+
     match Command::new("taskkill")
         .args(["/F", "/PID", &pid.to_string()])
         .creation_flags(CREATE_NO_WINDOW)
@@ -587,21 +605,22 @@ fn raw_kill(args: &Value) -> Value {
                 json!(format!("[ERROR] {}", stderr.trim()))
             }
         }
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
 fn raw_env(args: &Value) -> Value {
     let key = args.get("key").and_then(|v| v.as_str()).unwrap_or("");
-    
+
     if !key.is_empty() {
         match std::env::var(key) {
             Ok(val) => json!(val),
-            Err(_) => json!(format!("[ERROR] {} not set", key))
+            Err(_) => json!(format!("[ERROR] {} not set", key)),
         }
     } else {
         let useful = ["PATH", "USERPROFILE", "APPDATA", "TEMP", "COMPUTERNAME"];
-        let values: Vec<String> = useful.iter()
+        let values: Vec<String> = useful
+            .iter()
             .map(|k| format!("{}={}", k, std::env::var(k).unwrap_or_default()))
             .collect();
         json!(values.join("\n"))
@@ -611,7 +630,7 @@ fn raw_env(args: &Value) -> Value {
 fn raw_clip_read(_args: &Value) -> Value {
     match arboard::Clipboard::new().and_then(|mut cb| cb.get_text()) {
         Ok(text) => json!(text),
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
 
@@ -620,17 +639,19 @@ fn raw_clip_write(args: &Value) -> Value {
 
     match arboard::Clipboard::new().and_then(|mut cb| cb.set_text(content.to_string())) {
         Ok(()) => json!(format!("copied: {} chars", content.len())),
-        Err(e) => json!(format!("[ERROR] {}", e))
+        Err(e) => json!(format!("[ERROR] {}", e)),
     }
 }
-
 
 // ============ ADDED: POWERSHELL, ARCHIVE, SEARCH, SYSINFO ============
 
 fn powershell(args: &Value) -> Value {
     let command = args.get("command").and_then(|v| v.as_str()).unwrap_or("");
-    let _timeout = args.get("timeout_secs").and_then(|v| v.as_u64()).unwrap_or(30);
-    
+    let _timeout = args
+        .get("timeout_secs")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(30);
+
     match Command::new("powershell")
         .args(["-NoProfile", "-Command", command])
         .creation_flags(CREATE_NO_WINDOW)
@@ -639,7 +660,13 @@ fn powershell(args: &Value) -> Value {
         Ok(output) => {
             let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            log::log_execution("powershell", command, &stdout, &stderr, output.status.success());
+            log::log_execution(
+                "powershell",
+                command,
+                &stdout,
+                &stderr,
+                output.status.success(),
+            );
             json!({
                 "exit_code": output.status.code().unwrap_or(-1),
                 "stdout": stdout.trim(),
@@ -655,10 +682,22 @@ fn powershell(args: &Value) -> Value {
 }
 
 fn notify(args: &Value) -> Value {
-    let title = args.get("title").and_then(|v| v.as_str()).unwrap_or("").trim();
-    let body = args.get("body").and_then(|v| v.as_str()).unwrap_or("").trim();
+    let title = args
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
+    let body = args
+        .get("body")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .trim();
     let icon = args.get("icon").and_then(|v| v.as_str()).unwrap_or("info");
-    let duration_ms = args.get("duration_ms").and_then(|v| v.as_u64()).unwrap_or(5000).max(1);
+    let duration_ms = args
+        .get("duration_ms")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(5000)
+        .max(1);
 
     if title.is_empty() || body.is_empty() {
         return json!({"error": "Both title and body are required"});
@@ -753,21 +792,35 @@ Write-Output 'winrt'
 }
 
 fn archive_create(args: &Value) -> Value {
-    let paths: Vec<&str> = args.get("paths")
+    let paths: Vec<&str> = args
+        .get("paths")
         .and_then(|v| v.as_array())
         .map(|a| a.iter().filter_map(|v| v.as_str()).collect())
         .unwrap_or_default();
-    let output = args.get("output").and_then(|v| v.as_str()).unwrap_or("archive.zip");
-    
+    let output = args
+        .get("output")
+        .and_then(|v| v.as_str())
+        .unwrap_or("archive.zip");
+
     if paths.is_empty() {
         return json!({"error": "No paths provided"});
     }
-    
+
     // Build PowerShell Compress-Archive command
-    let paths_str = paths.iter().map(|p| format!("'{}'", p)).collect::<Vec<_>>().join(",");
-    let cmd = format!("Compress-Archive -Path {} -DestinationPath '{}' -Force", paths_str, output);
-    
-    match Command::new("powershell").args(["-NoProfile", "-Command", &cmd]).output() {
+    let paths_str = paths
+        .iter()
+        .map(|p| format!("'{}'", p))
+        .collect::<Vec<_>>()
+        .join(",");
+    let cmd = format!(
+        "Compress-Archive -Path {} -DestinationPath '{}' -Force",
+        paths_str, output
+    );
+
+    match Command::new("powershell")
+        .args(["-NoProfile", "-Command", &cmd])
+        .output()
+    {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).to_string();
             if out.status.success() {
@@ -776,21 +829,33 @@ fn archive_create(args: &Value) -> Value {
                 json!({"error": stderr.trim()})
             }
         }
-        Err(e) => json!({"error": format!("{}", e)})
+        Err(e) => json!({"error": format!("{}", e)}),
     }
 }
 
 fn archive_extract(args: &Value) -> Value {
-    let archive = args.get("archive_path").and_then(|v| v.as_str()).unwrap_or("");
-    let dest = args.get("destination").and_then(|v| v.as_str()).unwrap_or(".");
-    
+    let archive = args
+        .get("archive_path")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let dest = args
+        .get("destination")
+        .and_then(|v| v.as_str())
+        .unwrap_or(".");
+
     if archive.is_empty() {
         return json!({"error": "No archive_path provided"});
     }
-    
-    let cmd = format!("Expand-Archive -Path '{}' -DestinationPath '{}' -Force", archive, dest);
-    
-    match Command::new("powershell").args(["-NoProfile", "-Command", &cmd]).output() {
+
+    let cmd = format!(
+        "Expand-Archive -Path '{}' -DestinationPath '{}' -Force",
+        archive, dest
+    );
+
+    match Command::new("powershell")
+        .args(["-NoProfile", "-Command", &cmd])
+        .output()
+    {
         Ok(out) => {
             let stderr = String::from_utf8_lossy(&out.stderr).to_string();
             if out.status.success() {
@@ -799,27 +864,33 @@ fn archive_extract(args: &Value) -> Value {
                 json!({"error": stderr.trim()})
             }
         }
-        Err(e) => json!({"error": format!("{}", e)})
+        Err(e) => json!({"error": format!("{}", e)}),
     }
 }
 
 fn search_files(args: &Value) -> Value {
     let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
     let pattern = args.get("pattern").and_then(|v| v.as_str()).unwrap_or("");
-    let search_type = args.get("search_type").and_then(|v| v.as_str()).unwrap_or("files");
-    
+    let search_type = args
+        .get("search_type")
+        .and_then(|v| v.as_str())
+        .unwrap_or("files");
+
     let cmd = if search_type == "content" {
         format!("Get-ChildItem -Path '{}' -Recurse -File | Select-String -Pattern '{}' | Select-Object -First 50 Path,LineNumber,Line | Format-Table -AutoSize", path, pattern)
     } else {
         format!("Get-ChildItem -Path '{}' -Recurse -Filter '*{}*' | Select-Object -First 50 FullName,Length,LastWriteTime | Format-Table -AutoSize", path, pattern)
     };
-    
-    match Command::new("powershell").args(["-NoProfile", "-Command", &cmd]).output() {
+
+    match Command::new("powershell")
+        .args(["-NoProfile", "-Command", &cmd])
+        .output()
+    {
         Ok(out) => {
             let stdout = String::from_utf8_lossy(&out.stdout).to_string();
             json!({"results": stdout.trim()})
         }
-        Err(e) => json!({"error": format!("{}", e)})
+        Err(e) => json!({"error": format!("{}", e)}),
     }
 }
 
@@ -838,13 +909,16 @@ $disk = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" | Select-Object 
     Disks = ($disk | ForEach-Object { "$($_.DeviceID) $($_.FreeGB)/$($_.SizeGB)GB" }) -join "; "
 } | ConvertTo-Json
 "#;
-    
-    match Command::new("powershell").args(["-NoProfile", "-Command", cmd]).output() {
+
+    match Command::new("powershell")
+        .args(["-NoProfile", "-Command", cmd])
+        .output()
+    {
         Ok(out) => {
             let stdout = String::from_utf8_lossy(&out.stdout).to_string();
             serde_json::from_str(stdout.trim()).unwrap_or(json!({"raw": stdout.trim()}))
         }
-        Err(e) => json!({"error": format!("{}", e)})
+        Err(e) => json!({"error": format!("{}", e)}),
     }
 }
 
@@ -852,14 +926,19 @@ const RECOVERY_FILE: &str = "C:\\temp\\mcp_recovery.json";
 
 fn load_recovery() -> Value {
     match std::fs::read_to_string(RECOVERY_FILE) {
-        Ok(content) => serde_json::from_str(&content).unwrap_or(json!({"sessions": [], "checkpoints": []})),
-        Err(_) => json!({"sessions": [], "checkpoints": []})
+        Ok(content) => {
+            serde_json::from_str(&content).unwrap_or(json!({"sessions": [], "checkpoints": []}))
+        }
+        Err(_) => json!({"sessions": [], "checkpoints": []}),
     }
 }
 
 fn save_recovery(data: &Value) {
     let _ = std::fs::create_dir_all("C:\\temp");
-    let _ = std::fs::write(RECOVERY_FILE, serde_json::to_string_pretty(data).unwrap_or_default());
+    let _ = std::fs::write(
+        RECOVERY_FILE,
+        serde_json::to_string_pretty(data).unwrap_or_default(),
+    );
 }
 
 fn recovery_status(_args: &Value) -> Value {
@@ -874,7 +953,7 @@ fn recovery_status(_args: &Value) -> Value {
 fn resume_operation(args: &Value) -> Value {
     let checkpoint_id = args["checkpoint_id"].as_str().unwrap_or("");
     let data = load_recovery();
-    
+
     if let Some(checkpoints) = data["checkpoints"].as_array() {
         for cp in checkpoints {
             if cp["checkpoint_id"].as_str() == Some(checkpoint_id) {
@@ -891,12 +970,18 @@ fn clear_recovery(_args: &Value) -> Value {
 }
 
 fn port_check(args: &Value) -> Value {
-    let host = args.get("host").and_then(|v| v.as_str()).unwrap_or("127.0.0.1");
+    let host = args
+        .get("host")
+        .and_then(|v| v.as_str())
+        .unwrap_or("127.0.0.1");
     let port = match args.get("port").and_then(|v| v.as_u64()) {
         Some(p) => p as u16,
         None => return json!({"error": "port required"}),
     };
-    let timeout_ms = args.get("timeout_ms").and_then(|v| v.as_u64()).unwrap_or(2000);
+    let timeout_ms = args
+        .get("timeout_ms")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(2000);
 
     let addr = format!("{}:{}", host, port);
     let socket_addr: std::net::SocketAddr = match addr.parse() {
@@ -916,7 +1001,7 @@ fn port_check(args: &Value) -> Value {
                 "port": port,
                 "connect_time_ms": elapsed_ms,
             })
-        },
+        }
         Err(e) => {
             let elapsed_ms = start.elapsed().as_millis();
             json!({
@@ -938,7 +1023,10 @@ fn tail_file(args: &Value) -> Value {
         None => return json!({"error": "Missing 'path' parameter"}),
     };
     let max_lines = args.get("lines").and_then(|v| v.as_u64()).unwrap_or(50) as usize;
-    let since_bytes = args.get("since_bytes").and_then(|v| v.as_u64()).unwrap_or(0);
+    let since_bytes = args
+        .get("since_bytes")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(0);
 
     let mut file = match fs::File::open(path) {
         Ok(f) => f,

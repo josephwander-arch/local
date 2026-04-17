@@ -16,8 +16,8 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { 
-                        "type": "string", 
+                    "repo_path": {
+                        "type": "string",
                         "description": "Repository path (default: C:\\rust-mcp)",
                         "default": "C:\\rust-mcp"
                     }
@@ -30,13 +30,13 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { 
-                        "type": "string", 
+                    "repo_path": {
+                        "type": "string",
                         "description": "Repository path (default: C:\\rust-mcp)",
                         "default": "C:\\rust-mcp"
                     },
-                    "limit": { 
-                        "type": "integer", 
+                    "limit": {
+                        "type": "integer",
                         "description": "Max commits to show (default: 10)",
                         "default": 10
                     },
@@ -54,16 +54,16 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { 
-                        "type": "string", 
+                    "repo_path": {
+                        "type": "string",
                         "description": "Repository path (default: C:\\rust-mcp)",
                         "default": "C:\\rust-mcp"
                     },
-                    "message": { 
-                        "type": "string", 
+                    "message": {
+                        "type": "string",
                         "description": "Commit message"
                     },
-                    "files": { 
+                    "files": {
                         "type": "array",
                         "items": { "type": "string" },
                         "description": "Files to stage (empty = all changed)"
@@ -83,18 +83,18 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { 
-                        "type": "string", 
+                    "repo_path": {
+                        "type": "string",
                         "description": "Repository path (default: C:\\rust-mcp)",
                         "default": "C:\\rust-mcp"
                     },
-                    "action": { 
-                        "type": "string", 
+                    "action": {
+                        "type": "string",
                         "description": "push, pop, list, drop, show",
                         "default": "push"
                     },
-                    "message": { 
-                        "type": "string", 
+                    "message": {
+                        "type": "string",
                         "description": "Stash message (for push)"
                     },
                     "index": {
@@ -111,18 +111,18 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { 
-                        "type": "string", 
+                    "repo_path": {
+                        "type": "string",
                         "description": "Repository path (default: C:\\rust-mcp)",
                         "default": "C:\\rust-mcp"
                     },
-                    "target": { 
-                        "type": "string", 
+                    "target": {
+                        "type": "string",
                         "description": "Commit hash, HEAD~N, or branch",
                         "default": "HEAD~1"
                     },
-                    "mode": { 
-                        "type": "string", 
+                    "mode": {
+                        "type": "string",
                         "description": "soft, mixed, hard (default: hard)",
                         "default": "hard"
                     }
@@ -170,7 +170,8 @@ pub fn get_definitions() -> Vec<Value> {
 }
 
 fn get_repo_path(args: &Value) -> String {
-    args["repo_path"].as_str()
+    args["repo_path"]
+        .as_str()
         .unwrap_or("C:\\rust-mcp")
         .to_string()
 }
@@ -185,39 +186,43 @@ pub fn execute(name: &str, args: &Value) -> Value {
         "git_diff" => git_diff(args),
         "git_branch" => git_branch(args),
         "git_checkout" => git_checkout(args),
-        _ => json!({"error": format!("Unknown git tool: {}", name)})
+        _ => json!({"error": format!("Unknown git tool: {}", name)}),
     }
 }
 
 fn git_status(args: &Value) -> Value {
     let repo = get_repo_path(args);
-    
+
     // Get branch
     let branch_out = Command::new("git")
         .args(["-C", &repo, "rev-parse", "--abbrev-ref", "HEAD"])
         .output();
-    
-    let branch = branch_out.map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+
+    let branch = branch_out
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
         .unwrap_or_else(|_| "unknown".to_string());
-    
+
     // Get status
     let status_out = Command::new("git")
         .args(["-C", &repo, "status", "--porcelain"])
         .output();
-    
-    let status_text = status_out.map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+
+    let status_text = status_out
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
         .unwrap_or_default();
-    
+
     let mut modified = Vec::new();
     let mut staged = Vec::new();
     let mut untracked = Vec::new();
-    
+
     for line in status_text.lines() {
-        if line.len() < 3 { continue; }
+        if line.len() < 3 {
+            continue;
+        }
         let index = line.chars().nth(0).unwrap_or(' ');
         let worktree = line.chars().nth(1).unwrap_or(' ');
         let file = line[3..].to_string();
-        
+
         if index != ' ' && index != '?' {
             staged.push(file.clone());
         }
@@ -228,7 +233,7 @@ fn git_status(args: &Value) -> Value {
             untracked.push(file);
         }
     }
-    
+
     json!({
         "branch": branch,
         "clean": modified.is_empty() && staged.is_empty() && untracked.is_empty(),
@@ -242,22 +247,23 @@ fn git_log(args: &Value) -> Value {
     let repo = get_repo_path(args);
     let limit = args["limit"].as_i64().unwrap_or(10);
     let oneline = args["oneline"].as_bool().unwrap_or(true);
-    
+
     let format = if oneline {
         "--oneline"
     } else {
         "--format=%H|%s|%an|%ar"
     };
-    
+
     let output = Command::new("git")
         .args(["-C", &repo, "log", format, &format!("-{}", limit)])
         .output();
-    
+
     match output {
         Ok(o) if o.status.success() => {
             let text = String::from_utf8_lossy(&o.stdout);
             if oneline {
-                let commits: Vec<Value> = text.lines()
+                let commits: Vec<Value> = text
+                    .lines()
                     .map(|line| {
                         let parts: Vec<&str> = line.splitn(2, ' ').collect();
                         json!({
@@ -268,7 +274,8 @@ fn git_log(args: &Value) -> Value {
                     .collect();
                 json!({"commits": commits})
             } else {
-                let commits: Vec<Value> = text.lines()
+                let commits: Vec<Value> = text
+                    .lines()
                     .map(|line| {
                         let parts: Vec<&str> = line.split('|').collect();
                         json!({
@@ -281,9 +288,9 @@ fn git_log(args: &Value) -> Value {
                     .collect();
                 json!({"commits": commits})
             }
-        },
+        }
         Ok(o) => json!({"error": String::from_utf8_lossy(&o.stderr).to_string()}),
-        Err(e) => json!({"error": e.to_string()})
+        Err(e) => json!({"error": e.to_string()}),
     }
 }
 
@@ -291,17 +298,15 @@ fn git_commit(args: &Value) -> Value {
     let repo = get_repo_path(args);
     let message = match args["message"].as_str() {
         Some(m) => m,
-        None => return json!({"error": "Missing commit message"})
+        None => return json!({"error": "Missing commit message"}),
     };
     let all = args["all"].as_bool().unwrap_or(false);
-    
+
     // Stage files
     if let Some(files) = args["files"].as_array() {
         for file in files {
             if let Some(f) = file.as_str() {
-                let _ = Command::new("git")
-                    .args(["-C", &repo, "add", f])
-                    .output();
+                let _ = Command::new("git").args(["-C", &repo, "add", f]).output();
             }
         }
     } else if all {
@@ -309,12 +314,12 @@ fn git_commit(args: &Value) -> Value {
             .args(["-C", &repo, "add", "-A"])
             .output();
     }
-    
+
     // Commit
     let output = Command::new("git")
         .args(["-C", &repo, "commit", "-m", message])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout).to_string();
@@ -330,8 +335,8 @@ fn git_commit(args: &Value) -> Value {
                     "error": if stderr.is_empty() { stdout } else { stderr }
                 })
             }
-        },
-        Err(e) => json!({"error": e.to_string()})
+        }
+        Err(e) => json!({"error": e.to_string()}),
     }
 }
 
@@ -339,7 +344,7 @@ fn git_stash(args: &Value) -> Value {
     let repo = get_repo_path(args);
     let action = args["action"].as_str().unwrap_or("push");
     let index = args["index"].as_i64().unwrap_or(0);
-    
+
     let output = match action {
         "push" => {
             let mut cmd_args = vec!["-C", &repo, "stash", "push"];
@@ -348,30 +353,35 @@ fn git_stash(args: &Value) -> Value {
                 cmd_args.push(msg);
             }
             Command::new("git").args(&cmd_args).output()
-        },
-        "pop" => {
-            Command::new("git")
-                .args(["-C", &repo, "stash", "pop", &format!("stash@{{{}}}", index)])
-                .output()
-        },
-        "list" => {
-            Command::new("git")
-                .args(["-C", &repo, "stash", "list"])
-                .output()
-        },
-        "drop" => {
-            Command::new("git")
-                .args(["-C", &repo, "stash", "drop", &format!("stash@{{{}}}", index)])
-                .output()
-        },
-        "show" => {
-            Command::new("git")
-                .args(["-C", &repo, "stash", "show", "-p", &format!("stash@{{{}}}", index)])
-                .output()
-        },
-        _ => return json!({"error": format!("Unknown stash action: {}", action)})
+        }
+        "pop" => Command::new("git")
+            .args(["-C", &repo, "stash", "pop", &format!("stash@{{{}}}", index)])
+            .output(),
+        "list" => Command::new("git")
+            .args(["-C", &repo, "stash", "list"])
+            .output(),
+        "drop" => Command::new("git")
+            .args([
+                "-C",
+                &repo,
+                "stash",
+                "drop",
+                &format!("stash@{{{}}}", index),
+            ])
+            .output(),
+        "show" => Command::new("git")
+            .args([
+                "-C",
+                &repo,
+                "stash",
+                "show",
+                "-p",
+                &format!("stash@{{{}}}", index),
+            ])
+            .output(),
+        _ => return json!({"error": format!("Unknown stash action: {}", action)}),
     };
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout).to_string();
@@ -380,8 +390,8 @@ fn git_stash(args: &Value) -> Value {
                 "success": o.status.success(),
                 "output": if stdout.is_empty() { stderr } else { stdout }
             })
-        },
-        Err(e) => json!({"error": e.to_string()})
+        }
+        Err(e) => json!({"error": e.to_string()}),
     }
 }
 
@@ -389,19 +399,19 @@ fn git_reset(args: &Value) -> Value {
     let repo = get_repo_path(args);
     let target = args["target"].as_str().unwrap_or("HEAD~1");
     let mode = args["mode"].as_str().unwrap_or("hard");
-    
+
     // Get current commit first
     let before = Command::new("git")
         .args(["-C", &repo, "log", "--oneline", "-1"])
         .output()
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
         .unwrap_or_default();
-    
+
     let mode_flag = format!("--{}", mode);
     let output = Command::new("git")
         .args(["-C", &repo, "reset", &mode_flag, target])
         .output();
-    
+
     match output {
         Ok(o) => {
             let after = Command::new("git")
@@ -409,7 +419,7 @@ fn git_reset(args: &Value) -> Value {
                 .output()
                 .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
                 .unwrap_or_default();
-            
+
             json!({
                 "success": o.status.success(),
                 "before": before,
@@ -417,11 +427,10 @@ fn git_reset(args: &Value) -> Value {
                 "target": target,
                 "mode": mode
             })
-        },
-        Err(e) => json!({"error": e.to_string()})
+        }
+        Err(e) => json!({"error": e.to_string()}),
     }
 }
-
 
 fn git_diff(args: &Value) -> Value {
     let repo = get_repo_path(args);
@@ -446,8 +455,8 @@ fn git_diff(args: &Value) -> Value {
             } else {
                 json!({"diff": diff})
             }
-        },
-        Err(e) => json!({"error": e.to_string()})
+        }
+        Err(e) => json!({"error": e.to_string()}),
     }
 }
 
@@ -458,47 +467,56 @@ fn git_branch(args: &Value) -> Value {
 
     match action {
         "list" => {
-            match Command::new("git").args(["-C", &repo, "branch", "-a"]).output() {
+            match Command::new("git")
+                .args(["-C", &repo, "branch", "-a"])
+                .output()
+            {
                 Ok(output) => {
                     let branches = String::from_utf8_lossy(&output.stdout).to_string();
                     json!({"branches": branches.trim()})
-                },
-                Err(e) => json!({"error": e.to_string()})
+                }
+                Err(e) => json!({"error": e.to_string()}),
             }
-        },
+        }
         "create" => {
             let branch_name = match name {
                 Some(n) => n,
-                None => return json!({"error": "name required for create"})
+                None => return json!({"error": "name required for create"}),
             };
-            match Command::new("git").args(["-C", &repo, "branch", branch_name]).output() {
+            match Command::new("git")
+                .args(["-C", &repo, "branch", branch_name])
+                .output()
+            {
                 Ok(output) => {
                     if output.status.success() {
                         json!({"created": branch_name})
                     } else {
                         json!({"error": String::from_utf8_lossy(&output.stderr).to_string()})
                     }
-                },
-                Err(e) => json!({"error": e.to_string()})
+                }
+                Err(e) => json!({"error": e.to_string()}),
             }
-        },
+        }
         "delete" => {
             let branch_name = match name {
                 Some(n) => n,
-                None => return json!({"error": "name required for delete"})
+                None => return json!({"error": "name required for delete"}),
             };
-            match Command::new("git").args(["-C", &repo, "branch", "-d", branch_name]).output() {
+            match Command::new("git")
+                .args(["-C", &repo, "branch", "-d", branch_name])
+                .output()
+            {
                 Ok(output) => {
                     if output.status.success() {
                         json!({"deleted": branch_name})
                     } else {
                         json!({"error": String::from_utf8_lossy(&output.stderr).to_string()})
                     }
-                },
-                Err(e) => json!({"error": e.to_string()})
+                }
+                Err(e) => json!({"error": e.to_string()}),
             }
-        },
-        _ => json!({"error": format!("Unknown action: {}. Use list, create, or delete", action)})
+        }
+        _ => json!({"error": format!("Unknown action: {}. Use list, create, or delete", action)}),
     }
 }
 
@@ -506,7 +524,7 @@ fn git_checkout(args: &Value) -> Value {
     let repo = get_repo_path(args);
     let target = match args["target"].as_str() {
         Some(t) => t,
-        None => return json!({"error": "target is required"})
+        None => return json!({"error": "target is required"}),
     };
     let create = args["create"].as_bool().unwrap_or(false);
 
@@ -518,16 +536,19 @@ fn git_checkout(args: &Value) -> Value {
 
     match Command::new("git").args(&cmd_args).output() {
         Ok(output) => {
-            let combined = format!("{}{}", 
+            let combined = format!(
+                "{}{}",
                 String::from_utf8_lossy(&output.stdout),
                 String::from_utf8_lossy(&output.stderr)
-            ).trim().to_string();
+            )
+            .trim()
+            .to_string();
             if output.status.success() {
                 json!({"switched_to": target, "output": combined})
             } else {
                 json!({"error": combined})
             }
-        },
-        Err(e) => json!({"error": e.to_string()})
+        }
+        Err(e) => json!({"error": e.to_string()}),
     }
 }

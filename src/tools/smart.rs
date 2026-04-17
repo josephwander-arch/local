@@ -3,12 +3,12 @@
 //! Reads/writes to Volumes/logs/error_fallbacks.json
 // NAV: TOC at line 323 | 11 fn |  struct | 2026-04-15
 
+use super::{raw, session, transforms};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
-use super::{raw, session, transforms};
 
 const FALLBACKS_PATH: &str = r"C:\My Drive\Volumes\logs\error_fallbacks.json";
 const ERROR_LOG_PATH: &str = r"C:\My Drive\Volumes\logs\error_patterns.jsonl";
@@ -30,27 +30,36 @@ fn load_fallbacks() -> HashMap<String, ErrorPattern> {
     }
     // Default patterns
     let mut patterns = HashMap::new();
-    patterns.insert("path_spaces_cmd".into(), ErrorPattern {
-        trigger: "raw_run".into(),
-        symptom: "syntax is incorrect".into(),
-        fallback: "powershell".into(),
-        success_rate: 0.95,
-        occurrences: 0,
-    });
-    patterns.insert("timeout_raw".into(), ErrorPattern {
-        trigger: "raw_run".into(),
-        symptom: "timeout".into(),
-        fallback: "powershell".into(),
-        success_rate: 0.80,
-        occurrences: 0,
-    });
-    patterns.insert("cargo_pipe_fail".into(), ErrorPattern {
-        trigger: "powershell".into(),
-        symptom: "cargo".into(),
-        fallback: "raw_run_bat".into(),
-        success_rate: 1.0,
-        occurrences: 0,
-    });
+    patterns.insert(
+        "path_spaces_cmd".into(),
+        ErrorPattern {
+            trigger: "raw_run".into(),
+            symptom: "syntax is incorrect".into(),
+            fallback: "powershell".into(),
+            success_rate: 0.95,
+            occurrences: 0,
+        },
+    );
+    patterns.insert(
+        "timeout_raw".into(),
+        ErrorPattern {
+            trigger: "raw_run".into(),
+            symptom: "timeout".into(),
+            fallback: "powershell".into(),
+            success_rate: 0.80,
+            occurrences: 0,
+        },
+    );
+    patterns.insert(
+        "cargo_pipe_fail".into(),
+        ErrorPattern {
+            trigger: "powershell".into(),
+            symptom: "cargo".into(),
+            fallback: "raw_run_bat".into(),
+            success_rate: 1.0,
+            occurrences: 0,
+        },
+    );
     patterns
 }
 
@@ -68,16 +77,24 @@ fn log_error_attempt(tool: &str, error: &str, fallback: Option<&str>, success: O
         "fallback_tried": fallback,
         "fallback_success": success
     });
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(ERROR_LOG_PATH) {
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(ERROR_LOG_PATH)
+    {
         let _ = writeln!(file, "{}", entry);
     }
 }
 
-fn find_fallback(route: &str, error_msg: &str, patterns: &HashMap<String, ErrorPattern>) -> Option<(String, String)> {
+fn find_fallback(
+    route: &str,
+    error_msg: &str,
+    patterns: &HashMap<String, ErrorPattern>,
+) -> Option<(String, String)> {
     let error_lower = error_msg.to_lowercase();
     for (id, pattern) in patterns {
-        if pattern.trigger.to_lowercase() == route.to_lowercase() 
-            && error_lower.contains(&pattern.symptom.to_lowercase()) 
+        if pattern.trigger.to_lowercase() == route.to_lowercase()
+            && error_lower.contains(&pattern.symptom.to_lowercase())
         {
             return Some((id.clone(), pattern.fallback.clone()));
         }
@@ -106,11 +123,15 @@ fn is_error_result(result: &Value) -> Option<String> {
     None
 }
 
-fn update_pattern_stats(patterns: &mut HashMap<String, ErrorPattern>, pattern_id: &str, success: bool) {
+fn update_pattern_stats(
+    patterns: &mut HashMap<String, ErrorPattern>,
+    pattern_id: &str,
+    success: bool,
+) {
     if let Some(pattern) = patterns.get_mut(pattern_id) {
         pattern.occurrences += 1;
         let new_rate = if success { 1.0 } else { 0.0 };
-        pattern.success_rate = (pattern.success_rate * (pattern.occurrences - 1) as f64 + new_rate) 
+        pattern.success_rate = (pattern.success_rate * (pattern.occurrences - 1) as f64 + new_rate)
             / pattern.occurrences as f64;
     }
 }
@@ -145,7 +166,7 @@ pub fn get_definitions() -> Vec<Value> {
                 },
                 "required": ["path"]
             }
-        })
+        }),
     ]
 }
 
@@ -154,7 +175,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
     match name {
         "smart_exec" => smart_exec(args),
         "smart_read" => smart_read(args),
-        _ => json!({"error": format!("Unknown smart tool: {}", name)})
+        _ => json!({"error": format!("Unknown smart tool: {}", name)}),
     }
 }
 
@@ -166,8 +187,11 @@ fn execute_route(route: &str, command: &str, cwd: Option<&str>) -> Value {
             } else {
                 let _ = session::execute("session_create", &json!({"name": "default"}));
             }
-            session::execute("session_run", &json!({"session": "default", "command": command}))
-        },
+            session::execute(
+                "session_run",
+                &json!({"session": "default", "command": command}),
+            )
+        }
         "powershell" => raw::execute("powershell", &json!({"command": command})),
         "raw_run" | _ => raw::execute("raw_run", &json!({"command": command})),
     }
@@ -176,10 +200,13 @@ fn execute_route(route: &str, command: &str, cwd: Option<&str>) -> Value {
 fn smart_exec(args: &Value) -> Value {
     let command = args.get("command").and_then(|v| v.as_str()).unwrap_or("");
     let cwd = args.get("cwd").and_then(|v| v.as_str());
-    let needs_env = args.get("needs_env").and_then(|v| v.as_bool()).unwrap_or(false);
-    
+    let needs_env = args
+        .get("needs_env")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+
     // Detect PowerShell syntax
-    let needs_powershell = command.contains("$") 
+    let needs_powershell = command.contains("$")
         || command.contains("Get-")
         || command.contains("Set-")
         || command.contains("New-Item")
@@ -188,7 +215,7 @@ fn smart_exec(args: &Value) -> Value {
         || command.contains("-ErrorAction")
         || command.contains("Select-Object")
         || command.contains("Format-Table");
-    
+
     // Detect session needs
     let needs_session = needs_env
         || cwd.is_some()
@@ -199,7 +226,7 @@ fn smart_exec(args: &Value) -> Value {
         || command.contains(" && cd ")
         || command.starts_with("set ")
         || command.starts_with("export ");
-    
+
     // Select initial route
     let route = if needs_session {
         "session_run"
@@ -208,33 +235,35 @@ fn smart_exec(args: &Value) -> Value {
     } else {
         "raw_run"
     };
-    
+
     // First attempt
     let result = execute_route(route, command, cwd);
-    
+
     // Check for error and try fallback
     if let Some(error_msg) = is_error_result(&result) {
         let mut patterns = load_fallbacks();
-        
+
         if let Some((pattern_id, fallback_route)) = find_fallback(route, &error_msg, &patterns) {
             // Log first attempt failure
             log_error_attempt(route, &error_msg, Some(&fallback_route), None);
-            
+
             // Try fallback
             let fallback_result = execute_route(&fallback_route, command, cwd);
-            
+
             let fallback_success = is_error_result(&fallback_result).is_none();
-            
+
             // Update stats
             update_pattern_stats(&mut patterns, &pattern_id, fallback_success);
             save_fallbacks(&patterns);
-            
+
             // Log fallback result
-            log_error_attempt(&fallback_route, 
-                &is_error_result(&fallback_result).unwrap_or_default(), 
-                None, 
-                Some(fallback_success));
-            
+            log_error_attempt(
+                &fallback_route,
+                &is_error_result(&fallback_result).unwrap_or_default(),
+                None,
+                Some(fallback_success),
+            );
+
             return json!({
                 "routed_to": route,
                 "fallback_used": fallback_route,
@@ -242,11 +271,11 @@ fn smart_exec(args: &Value) -> Value {
                 "result": fallback_result
             });
         }
-        
+
         // No fallback available, log and return original error
         log_error_attempt(route, &error_msg, None, None);
     }
-    
+
     json!({
         "routed_to": route,
         "result": result
@@ -259,7 +288,7 @@ fn smart_read(args: &Value) -> Value {
     let find = args.get("find").and_then(|v| v.as_str());
     let lines = args.get("lines").and_then(|v| v.as_str());
     let compare_to = args.get("compare_to").and_then(|v| v.as_str());
-    
+
     // TOC-aware routing for Operating files
     if super::toc::is_operating_file(path) {
         // Section param → targeted read
@@ -275,45 +304,57 @@ fn smart_read(args: &Value) -> Value {
             }
         }
     }
-    
+
     let route: &str;
     let result: Value;
-    
+
     if let Some(pattern) = find {
         route = "transform_grep";
-        result = transforms::execute("transform_grep", &json!({
-            "path": path,
-            "pattern": pattern,
-            "context": 2
-        }));
+        result = transforms::execute(
+            "transform_grep",
+            &json!({
+                "path": path,
+                "pattern": pattern,
+                "context": 2
+            }),
+        );
     } else if let Some(range) = lines {
         route = "transform_extract_lines";
         let parts: Vec<&str> = range.split(':').collect();
         if parts.len() == 2 {
             let start: i64 = parts[0].parse().unwrap_or(1);
             let end: i64 = parts[1].parse().unwrap_or(-1);
-            result = transforms::execute("transform_extract_lines", &json!({
-                "path": path,
-                "start": start,
-                "end": end
-            }));
+            result = transforms::execute(
+                "transform_extract_lines",
+                &json!({
+                    "path": path,
+                    "start": start,
+                    "end": end
+                }),
+            );
         } else {
             return json!({"error": "lines format: 'start:end' e.g. '50:100'"});
         }
     } else if let Some(other) = compare_to {
         route = "transform_diff_files";
-        result = transforms::execute("transform_diff_files", &json!({
-            "file_a": path,
-            "file_b": other
-        }));
+        result = transforms::execute(
+            "transform_diff_files",
+            &json!({
+                "file_a": path,
+                "file_b": other
+            }),
+        );
     } else {
         route = "raw_read";
-        result = raw::execute("raw_read", &json!({
-            "path": path,
-            "max_kb": 50
-        }));
+        result = raw::execute(
+            "raw_read",
+            &json!({
+                "path": path,
+                "max_kb": 50
+            }),
+        );
     }
-    
+
     json!({
         "routed_to": route,
         "result": result

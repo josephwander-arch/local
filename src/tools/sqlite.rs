@@ -3,27 +3,25 @@
 use serde_json::{json, Value};
 
 pub fn get_definitions() -> Vec<Value> {
-    vec![
-        json!({
-            "name": "sqlite_query",
-            "description": "Execute a read-only SQL query against a SQLite database. Returns results as JSON array. Use for querying FTS indexes, extraction metrics, dashboard state, and other SQLite DBs.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "db_path": { "type": "string", "description": "Path to the .db file" },
-                    "sql": { "type": "string", "description": "SQL query to execute (SELECT only)" },
-                    "max_rows": { "type": "integer", "description": "Max rows to return (default 100)", "default": 100 }
-                },
-                "required": ["db_path", "sql"]
-            }
-        })
-    ]
+    vec![json!({
+        "name": "sqlite_query",
+        "description": "Execute a read-only SQL query against a SQLite database. Returns results as JSON array. Use for querying FTS indexes, extraction metrics, dashboard state, and other SQLite DBs.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "db_path": { "type": "string", "description": "Path to the .db file" },
+                "sql": { "type": "string", "description": "SQL query to execute (SELECT only)" },
+                "max_rows": { "type": "integer", "description": "Max rows to return (default 100)", "default": 100 }
+            },
+            "required": ["db_path", "sql"]
+        }
+    })]
 }
 
 pub fn execute(name: &str, args: &Value) -> Value {
     match name {
         "sqlite_query" => execute_query(args),
-        _ => json!({"error": format!("Unknown sqlite tool: {}", name)})
+        _ => json!({"error": format!("Unknown sqlite tool: {}", name)}),
     }
 }
 
@@ -40,7 +38,10 @@ fn execute_query(args: &Value) -> Value {
 
     // Safety: only allow SELECT and PRAGMA
     let sql_upper = sql.trim().to_uppercase();
-    if !sql_upper.starts_with("SELECT") && !sql_upper.starts_with("PRAGMA") && !sql_upper.starts_with("EXPLAIN") {
+    if !sql_upper.starts_with("SELECT")
+        && !sql_upper.starts_with("PRAGMA")
+        && !sql_upper.starts_with("EXPLAIN")
+    {
         return json!({"error": "Only SELECT, PRAGMA, and EXPLAIN queries are allowed (read-only)"});
     }
 
@@ -70,8 +71,10 @@ fn execute_query(args: &Value) -> Value {
                 Ok(rusqlite::types::ValueRef::Real(f)) => json!(f),
                 Ok(rusqlite::types::ValueRef::Text(s)) => {
                     json!(std::str::from_utf8(s).unwrap_or("<invalid utf8>"))
-                },
-                Ok(rusqlite::types::ValueRef::Blob(b)) => json!(format!("<blob {} bytes>", b.len())),
+                }
+                Ok(rusqlite::types::ValueRef::Blob(b)) => {
+                    json!(format!("<blob {} bytes>", b.len()))
+                }
                 Err(_) => Value::Null,
             };
             obj.insert(column_names[i].clone(), val);
@@ -82,12 +85,14 @@ fn execute_query(args: &Value) -> Value {
     match result {
         Ok(mapped_rows) => {
             for row in mapped_rows {
-                if rows.len() >= max_rows { break; }
+                if rows.len() >= max_rows {
+                    break;
+                }
                 if let Ok(val) = row {
                     rows.push(val);
                 }
             }
-        },
+        }
         Err(e) => return json!({"error": format!("Query execution failed: {}", e)}),
     }
 

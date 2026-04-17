@@ -77,13 +77,12 @@ fn parse_toc(content: &str, toc_start: usize) -> Vec<TocEntry> {
             if let Some(range_str) = parts.first() {
                 let range_parts: Vec<&str> = range_str.split('-').collect();
                 if range_parts.len() == 2 {
-                    if let (Ok(start), Ok(end)) =
-                        (range_parts[0].parse::<usize>(), range_parts[1].parse::<usize>())
-                    {
+                    if let (Ok(start), Ok(end)) = (
+                        range_parts[0].parse::<usize>(),
+                        range_parts[1].parse::<usize>(),
+                    ) {
                         let keywords = if parts.len() > 1 {
-                            let kw = parts[1]
-                                .trim_start_matches('[')
-                                .trim_end_matches(']');
+                            let kw = parts[1].trim_start_matches('[').trim_end_matches(']');
                             kw.split(',').map(|s| s.trim().to_string()).collect()
                         } else {
                             vec![]
