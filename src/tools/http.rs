@@ -135,7 +135,7 @@ fn http_request(args: &Value) -> Value {
             // Body cap: 500KB (was 100KB before v1.2.9)
             const BODY_CAP: usize = 500_000;
             json!({
-                "success": status >= 200 && status < 300,
+                "success": (200..300).contains(&status),
                 "status_code": status,
                 "headers": response_headers,
                 "body": if body_len > BODY_CAP { &body_text[..BODY_CAP] } else { &body_text },

@@ -1,5 +1,3 @@
-// TODO: fix clippy lints and remove this blanket allow
-#![allow(clippy::all)]
 //! MCP-Windows: Raw tools + Windows automation for Claude Desktop
 //! Replaces: raw-tools (Python) + windows-mcp (uvx)
 // NAV: TOC at line 152 | 2 fn | 2 struct | 2026-04-15

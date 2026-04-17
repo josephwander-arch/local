@@ -6,9 +6,10 @@
 //!   - breadcrumb_clear tool (local-specific active-state cleanup)
 //!   - breadcrumb_list with filter param (active | archived | all)
 //!   - get_definitions / execute dispatch
+//!
 //! Removed in v1.2.9: auto_breadcrumb_start / auto_breadcrumb_advance
 //!   (was auto-starting breadcrumbs for every powershell/chain/psession_run call,
-//!    polluting breadcrumb_list with single-step noise)
+//!   polluting breadcrumb_list with single-step noise)
 //!
 //! All storage/locking/conflict/archive logic is in cpc-breadcrumbs.
 // NAV: TOC at line 424 | 14 fn | 0 struct | 2026-04-15

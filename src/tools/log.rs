@@ -27,7 +27,7 @@ pub fn log_execution(tool: &str, command: &str, stdout: &str, stderr: &str, succ
 
     // Append to log file
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(LOG_PATH) {
-        let _ = writeln!(file, "{}", entry.to_string());
+        let _ = writeln!(file, "{}", entry);
     }
 }
 
