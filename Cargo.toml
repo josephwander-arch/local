@@ -1,6 +1,6 @@
 [package]
 name = "local"
-version = "1.2.11"
+version = "1.2.12"
 edition = "2021"
 description = "Windows MCP - Raw tools + Windows automation for Claude Desktop"
 license = "Apache-2.0"

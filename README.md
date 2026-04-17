@@ -2,23 +2,20 @@
 
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
-Version 1.2.11 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
+Version 1.2.12 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
 
 ---
 
-## What's New in v1.2.11: Standalone Public Builds
+## What's New in v1.2.12: Git Parity with Programmer
 
-v1.2.11 is the first version of local that **builds cleanly from a standalone public clone** — no private workspace required.
-
-- **`cpc-breadcrumbs` moved to git dependency** — pinned to `josephwander-arch/cpc-breadcrumbs @ v0.1.0`, unblocking standalone `cargo build` from a fresh clone
-- **`Cargo.lock` committed** — reproducible CI builds without dependency drift
-- **License metadata** — `Apache-2.0` license, repository URL, and description added to `Cargo.toml`
-- **Mojibake cleanup** — stripped stray U+009D control characters from `dashboard.html` and UTF-8 BOM from `src/tools/planner.rs`
+v1.2.12 adds 5 git tools (`git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary`) so local and programmer are interchangeable for git operations. Schemas are identical — same params, same return shapes.
 
 ### Highlights since v1.1.1
 
 | Version | Headline |
 |---------|----------|
+| v1.2.12 | 5 new git tools for programmer parity: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary` |
+| v1.2.11 | First standalone public build — git deps, Cargo.lock, mojibake cleanup |
 | v1.2.9 | HTTP body cap raised to 500KB, breadcrumb auto-start noise removed, `breadcrumb_list` filter param, license changed to Apache-2.0 |
 | v1.2.8 | `local_health` diagnostic tool, `cpc-paths` portable path discovery |
 | v1.2.7 | Identity detection fixes, `breadcrumb_adopt` + `breadcrumb_list` tools |
@@ -74,7 +71,7 @@ crashes — local is the server.
 
 ## Tool Categories
 
-**100 tools total.** Grouped by capability:
+**105 tools total.** Grouped by capability:
 
 ### Shell & Execution (6 tools)
 `run` · `powershell` · `chain` · `smart_exec` · `plan` · `plan_assemble`
@@ -108,8 +105,9 @@ crashes — local is the server.
 ### HTTP (4 tools)
 `http_fetch` · `http_download` · `http_request` · `http_scrape`
 
-### Git (8 tools)
-`git_branch` · `git_checkout` · `git_commit` · `git_diff` · `git_log` ·
+### Git (13 tools)
+`git_branch` · `git_checkout` · `git_clone` · `git_commit` · `git_diff` ·
+`git_diff_summary` · `git_log` · `git_pull` · `git_push` · `git_remote` ·
 `git_reset` · `git_stash` · `git_status`
 
 ### WSL (4 tools)
@@ -177,8 +175,8 @@ Download `local.exe` for your architecture from the
 
 | Architecture | Binary |
 |---|---|
-| x64 | `local_v1.2.11_windows_x64.exe` |
-| ARM64 | `local_v1.2.11_windows_arm64.exe` |
+| x64 | `local_v1.2.12_windows_x64.exe` |
+| ARM64 | `local_v1.2.12_windows_arm64.exe` |
 
 Place it wherever you keep MCP server binaries (e.g. `C:\CPC\servers\`).
 

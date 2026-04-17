@@ -1,6 +1,6 @@
 ---
 name: local
-version: 1.2.11
+version: 1.2.12
 description: Windows-native MCP server — shell, files, sessions, transforms, and breadcrumb operation tracking
 triggers:
   - shell
@@ -23,7 +23,7 @@ platform: windows
 audience: MCP builders shipping on Windows
 ---
 
-# local MCP Server — Skill Reference (v1.2.11)
+# local MCP Server — Skill Reference (v1.2.12)
 
 ## Overview
 

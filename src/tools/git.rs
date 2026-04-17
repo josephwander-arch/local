@@ -1,8 +1,9 @@
 //! Git tools - Local repository management for rollback recovery
 //!
-//! Tools (5):
-//! git_status, git_log, git_commit, git_stash, git_reset
-//! git_stash, git_reset, git_branch
+//! Tools (13):
+//! git_status, git_log, git_commit, git_stash, git_reset,
+//! git_diff, git_branch, git_checkout,
+//! git_clone, git_pull, git_push, git_remote, git_diff_summary
 
 use serde_json::{json, Value};
 use std::process::Command;
@@ -166,6 +167,65 @@ pub fn get_definitions() -> Vec<Value> {
                 "required": ["target"]
             }
         }),
+        json!({
+            "name": "git_clone",
+            "description": "Clone a git repository.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "url": { "type": "string", "description": "Repository URL" },
+                    "destination": { "type": "string", "description": "Local directory" },
+                    "branch": { "type": "string", "description": "Branch to clone (optional)" }
+                },
+                "required": ["url"]
+            }
+        }),
+        json!({
+            "name": "git_pull",
+            "description": "Pull changes from remote.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "remote": { "type": "string", "description": "Remote name (default: origin)", "default": "origin" }
+                }
+            }
+        }),
+        json!({
+            "name": "git_push",
+            "description": "Push commits to remote.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "remote": { "type": "string", "description": "Remote name (default: origin)", "default": "origin" },
+                    "branch": { "type": "string", "description": "Branch to push (optional)" }
+                }
+            }
+        }),
+        json!({
+            "name": "git_remote",
+            "description": "Manage git remotes: list, add, remove.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "action": { "type": "string", "description": "list (default), add, remove", "default": "list" },
+                    "name": { "type": "string", "description": "Remote name (for add/remove)" },
+                    "url": { "type": "string", "description": "Remote URL (for add)" }
+                }
+            }
+        }),
+        json!({
+            "name": "git_diff_summary",
+            "description": "AI-friendly structured diff for commit messages.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" }
+                }
+            }
+        }),
     ]
 }
 
@@ -186,6 +246,11 @@ pub fn execute(name: &str, args: &Value) -> Value {
         "git_diff" => git_diff(args),
         "git_branch" => git_branch(args),
         "git_checkout" => git_checkout(args),
+        "git_clone" => git_clone(args),
+        "git_pull" => git_pull(args),
+        "git_push" => git_push(args),
+        "git_remote" => git_remote(args),
+        "git_diff_summary" => git_diff_summary(args),
         _ => json!({"error": format!("Unknown git tool: {}", name)}),
     }
 }
@@ -551,4 +616,228 @@ fn git_checkout(args: &Value) -> Value {
         }
         Err(e) => json!({"error": e.to_string()}),
     }
+}
+
+fn git_clone(args: &Value) -> Value {
+    let url = match args["url"].as_str() {
+        Some(u) if !u.is_empty() => u,
+        _ => return json!({"error": "url is required"}),
+    };
+    let destination = args["destination"].as_str();
+    let branch = args["branch"].as_str();
+
+    let mut cmd_args = vec!["clone".to_string()];
+    if let Some(b) = branch {
+        cmd_args.push("--branch".to_string());
+        cmd_args.push(b.to_string());
+    }
+    cmd_args.push(url.to_string());
+    if let Some(dest) = destination {
+        cmd_args.push(dest.to_string());
+    }
+
+    match Command::new("git").args(&cmd_args).output() {
+        Ok(output) => {
+            let combined = format!(
+                "{}{}",
+                String::from_utf8_lossy(&output.stdout),
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .trim()
+            .to_string();
+            if output.status.success() {
+                json!({"success": true, "url": url, "output": combined})
+            } else {
+                json!({"error": combined})
+            }
+        }
+        Err(e) => json!({"error": e.to_string()}),
+    }
+}
+
+fn git_pull(args: &Value) -> Value {
+    let repo = get_repo_path(args);
+    let remote = args["remote"].as_str().unwrap_or("origin");
+
+    match Command::new("git")
+        .args(["-C", &repo, "pull", remote])
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                json!({
+                    "success": true,
+                    "output": String::from_utf8_lossy(&output.stdout).to_string()
+                })
+            } else {
+                json!({
+                    "success": false,
+                    "error": String::from_utf8_lossy(&output.stderr).to_string()
+                })
+            }
+        }
+        Err(e) => json!({"error": e.to_string()}),
+    }
+}
+
+fn git_push(args: &Value) -> Value {
+    let repo = get_repo_path(args);
+    let remote = args["remote"].as_str().unwrap_or("origin");
+    let branch = args["branch"].as_str();
+
+    let mut cmd_args = vec!["-C", &repo, "push", remote];
+    if let Some(b) = branch {
+        cmd_args.push(b);
+    }
+
+    match Command::new("git").args(&cmd_args).output() {
+        Ok(output) => {
+            // git push writes progress to stderr even on success
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            if output.status.success() {
+                json!({
+                    "success": true,
+                    "remote": remote,
+                    "output": stderr
+                })
+            } else {
+                json!({
+                    "success": false,
+                    "error": stderr
+                })
+            }
+        }
+        Err(e) => json!({"error": e.to_string()}),
+    }
+}
+
+fn git_remote(args: &Value) -> Value {
+    let repo = get_repo_path(args);
+    let action = args["action"].as_str().unwrap_or("list");
+    let name = args["name"].as_str();
+    let url = args["url"].as_str();
+
+    match action {
+        "list" => {
+            match Command::new("git")
+                .args(["-C", &repo, "remote", "-v"])
+                .output()
+            {
+                Ok(output) => {
+                    json!({"remotes": String::from_utf8_lossy(&output.stdout).trim().to_string()})
+                }
+                Err(e) => json!({"error": e.to_string()}),
+            }
+        }
+        "add" => {
+            let n = match name {
+                Some(n) => n,
+                None => return json!({"error": "name required for add"}),
+            };
+            let u = match url {
+                Some(u) => u,
+                None => return json!({"error": "url required for add"}),
+            };
+            match Command::new("git")
+                .args(["-C", &repo, "remote", "add", n, u])
+                .output()
+            {
+                Ok(output) => {
+                    if output.status.success() {
+                        json!({"added": n, "url": u})
+                    } else {
+                        json!({"error": String::from_utf8_lossy(&output.stderr).to_string()})
+                    }
+                }
+                Err(e) => json!({"error": e.to_string()}),
+            }
+        }
+        "remove" => {
+            let n = match name {
+                Some(n) => n,
+                None => return json!({"error": "name required for remove"}),
+            };
+            match Command::new("git")
+                .args(["-C", &repo, "remote", "remove", n])
+                .output()
+            {
+                Ok(output) => {
+                    if output.status.success() {
+                        json!({"removed": n})
+                    } else {
+                        json!({"error": String::from_utf8_lossy(&output.stderr).to_string()})
+                    }
+                }
+                Err(e) => json!({"error": e.to_string()}),
+            }
+        }
+        _ => json!({"error": format!("Unknown action: {}. Use list, add, or remove", action)}),
+    }
+}
+
+fn git_diff_summary(args: &Value) -> Value {
+    let repo = get_repo_path(args);
+
+    // Get stat summary of staged changes
+    let stat_output = Command::new("git")
+        .args(["-C", &repo, "diff", "--stat", "--cached"])
+        .output();
+
+    let stat_str = stat_output
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+        .unwrap_or_default();
+
+    // Get file list with status
+    let files_output = Command::new("git")
+        .args(["-C", &repo, "diff", "--name-status", "--cached"])
+        .output();
+
+    let files_str = files_output
+        .map(|o| String::from_utf8_lossy(&o.stdout).to_string())
+        .unwrap_or_default();
+
+    let mut added = Vec::new();
+    let mut modified = Vec::new();
+    let mut deleted = Vec::new();
+
+    for line in files_str.lines() {
+        let parts: Vec<&str> = line.split('\t').collect();
+        if parts.len() >= 2 {
+            let file = parts[1].to_string();
+            match parts[0] {
+                "A" => added.push(file),
+                "M" => modified.push(file),
+                "D" => deleted.push(file),
+                _ => modified.push(file),
+            }
+        }
+    }
+
+    // Group by extension
+    let mut by_extension: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+    for file in added.iter().chain(modified.iter()) {
+        let ext = std::path::Path::new(file)
+            .extension()
+            .map(|e| e.to_string_lossy().to_string())
+            .unwrap_or_else(|| "no_extension".to_string());
+        by_extension.entry(ext).or_default().push(file.clone());
+    }
+
+    json!({
+        "success": true,
+        "summary": {
+            "added_files": added.len(),
+            "modified_files": modified.len(),
+            "deleted_files": deleted.len(),
+            "total_files": added.len() + modified.len() + deleted.len()
+        },
+        "files": {
+            "added": added,
+            "modified": modified,
+            "deleted": deleted
+        },
+        "by_extension": by_extension,
+        "stat": stat_str
+    })
 }

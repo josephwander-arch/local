@@ -4,6 +4,11 @@ All notable changes to the local MCP server are documented here.
 
 ## [Unreleased]
 
+## [1.2.12] - 2026-04-17
+
+### Added
+- **5 new git tools** for parity with programmer: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary`. Identical schemas and behavior to programmer's equivalents — use local and programmer interchangeably for git ops from Claude Desktop, Claude Code, or Cowork. Brings local's git tool count from 8 to 13.
+
 ## v1.2.11 - 2026-04-16
 
 ### Changed
