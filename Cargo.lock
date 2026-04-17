@@ -197,8 +197,7 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cpc-breadcrumbs"
-version = "0.1.0"
-source = "git+https://github.com/josephwander-arch/cpc-breadcrumbs?tag=v0.1.0#e5e5c91c52852bd4e0123c2bdb74d6e6c66d68cd"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "chrono",
