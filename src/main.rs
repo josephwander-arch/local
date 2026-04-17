@@ -124,7 +124,21 @@ fn handle_request(request: &JsonRpcRequest) -> JsonRpcResponse {
             let name = params.get("name").and_then(|v| v.as_str()).unwrap_or("");
             let args = params.get("arguments").cloned().unwrap_or(json!({}));
 
+            let tc_start = std::time::Instant::now();
             let result = tools::execute(name, &args);
+            let tc_ms = tc_start.elapsed().as_millis() as u64;
+
+            // B1: record tool call for dashboard feed
+            let input_preview = {
+                let s = args.to_string();
+                if s.len() > 80 { format!("{}…", &s[..80]) } else { s }
+            };
+            tools::record_tool_call(tools::ToolCallEntry {
+                tool_name: name.to_string(),
+                timestamp_utc: chrono::Utc::now().to_rfc3339(),
+                input_preview,
+                duration_ms: tc_ms,
+            });
 
             JsonRpcResponse {
                 jsonrpc: "2.0".to_string(),

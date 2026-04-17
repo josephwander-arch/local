@@ -1,5 +1,5 @@
 //! Tool modules for MCP-Windows
-// NAV: TOC at line 121 | 3 fn | 0 struct | 2026-04-15
+// NAV: TOC at line 121 | 3 fn | 1 struct | 2026-04-17
 
 pub mod auto_backup;
 pub mod bagtag;
@@ -21,7 +21,41 @@ pub mod toc;
 pub mod transforms;
 pub mod utils;
 
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::collections::VecDeque;
+use std::sync::Mutex;
+
+// ── B1: Per-server tool call feed ────────────────────────────────────────────
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct ToolCallEntry {
+    pub tool_name: String,
+    pub timestamp_utc: String,
+    pub input_preview: String,
+    pub duration_ms: u64,
+}
+
+static RECENT_TOOL_CALLS: std::sync::LazyLock<Mutex<VecDeque<ToolCallEntry>>> =
+    std::sync::LazyLock::new(|| Mutex::new(VecDeque::with_capacity(50)));
+
+/// Push a tool call entry to the ring buffer (cap 50).
+pub fn record_tool_call(entry: ToolCallEntry) {
+    if let Ok(mut ring) = RECENT_TOOL_CALLS.lock() {
+        ring.push_back(entry);
+        if ring.len() > 50 {
+            ring.pop_front();
+        }
+    }
+}
+
+/// Snapshot the recent tool calls (most recent last, up to 50).
+pub fn recent_tool_calls_snapshot() -> Vec<ToolCallEntry> {
+    RECENT_TOOL_CALLS
+        .lock()
+        .map(|ring| ring.iter().cloned().collect())
+        .unwrap_or_default()
+}
 
 /// Run on server startup: remove breadcrumb archives older than retention threshold.
 pub fn breadcrumbs_startup_cleanup() {
