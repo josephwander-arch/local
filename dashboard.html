@@ -424,9 +424,9 @@ const SERVERS = [
 ];
 
 const SERVER_TIERS = {
-    'Tier 1 — Core': ['ops'],
-    'Tier 2 — Infrastructure': ['local'],
-    'Tier 3 — Development': ['programmer'],
+    'Tier 1 — Core': ['ops'],
+    'Tier 2 — Infrastructure': ['local'],
+    'Tier 3 — Development': ['programmer'],
     'Knowledge': ['atlas', 'utonomous', 'learning'],
     'Services': ['reminder-rs', 'voice', 'vision', 'browser'],
     'Dev Tools': ['manager', 'echo'],
@@ -791,7 +791,7 @@ function buildVolTree() {
         // Check if items are quick-ref files (strings ending in .md) or topic keys
         for (const item of items) {
             if (item.endsWith('.md')) {
-                // Quick reference file — render as a direct file link
+                // Quick reference file — render as a direct file link
                 html += '<div class="vol-topic vol-file" draggable="true" ondragstart="event.dataTransfer.setData(\'text/plain\',\'' + esc(item) + '\')" onclick="loadVolFile(\'' + esc(item) + '\')" ondblclick="event.stopPropagation();openVolFileDialog(\'' + esc(item) + '\')" style="margin:4px 8px;">' +
                     '<div class="vol-topic-name">' + esc(item) + '</div></div>';
             } else {

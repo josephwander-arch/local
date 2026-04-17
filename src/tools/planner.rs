@@ -1,4 +1,4 @@
-﻿//! Ingredient-based Planner/Router with per-server Requirements
+//! Ingredient-based Planner/Router with per-server Requirements
 //! 
 //! Returns: ingredients, dependencies, requirements, breadcrumb recommendation
 //! Requirements are the server's own pre/post conditions for its tools.

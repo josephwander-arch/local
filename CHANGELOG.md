@@ -11,6 +11,10 @@ All notable changes to the local MCP server are documented here.
 - Added `license = "Apache-2.0"` + `repository` + `description` to Cargo.toml
 - Committed Cargo.lock for reproducible CI builds (was CRITICAL-3 in audit)
 
+### Fixed
+- Stripped 4× stray U+009D control chars from `dashboard.html` JS string literals
+- Stripped UTF-8 BOM from `src/tools/planner.rs`
+
 ### Notes
 - First version of local that builds cleanly as a standalone public clone without the rust-mcp workspace.
 
