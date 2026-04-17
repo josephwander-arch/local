@@ -10,7 +10,7 @@ This guide covers everything you need to do on each machine where you want to ru
 | Claude Desktop config | Yes | Edit `%APPDATA%\Claude\claude_desktop_config.json` — copy entry from `claude_desktop_config.example.json` in this repo into your `mcpServers` object. |
 | Per-machine paths | Yes | Will be auto-detected by `cpc-paths` (forthcoming). For now, set env vars or hardcode in your config. See "Path Configuration" below. |
 | User preferences | Yes | Open Claude Desktop → Settings → Profile → paste your preferences. (UI-only, can't script.) |
-| Skills (optional) | Yes | If using CPC skills system, mirror from your Drive's `Volumes/skills/{skill}/` to `%LOCALAPPDATA%\claude-skills\{skill}\`. |
+| Skills (optional) | Yes | If using the skills system, mirror skill folders to `%LOCALAPPDATA%\claude-skills\{skill}\`. |
 | Volumes / knowledge base | No (Drive-synced) | If Volumes is on Google Drive, just verify Drive is syncing on each machine. No copy needed. |
 
 ## Local-Specific Notes
@@ -83,7 +83,7 @@ To run `local` on a second machine:
 
 ### Legacy-path compatibility
 
-Existing Joe-style installs with data at `C:\CPC\*` continue to work unchanged. The cpc-paths library auto-detects these paths and uses them directly (legacy-fallback branch). No migration required.
+Existing installs with data at `C:\CPC\*` continue to work unchanged. The cpc-paths library auto-detects these paths and uses them directly (legacy-fallback branch). No migration required.
 
 ## Future: cpc-setup.exe (planned)
 
@@ -91,7 +91,7 @@ A single-binary helper that automates this entire per-machine setup is planned. 
 - Detect platform + architecture
 - Download the right MCP server binary from GitHub releases
 - Auto-detect Volumes / install / backup paths and write `.cpc-config.toml`
-- Mirror skills from your Drive (if using CPC skills system)
+- Mirror skills from your Drive (if using the skills system)
 - Generate a `claude_desktop_config.json` snippet ready to paste
 
 Until cpc-setup.exe ships, follow the manual steps above.

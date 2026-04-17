@@ -2,34 +2,55 @@
 
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
-Version 1.1.1 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
+Version 1.2.11 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
 
 ---
 
-## What's New in v1.1.1: Breadcrumb Operation Tracking
+## What's New in v1.2.11: Standalone Public Builds
 
-The **breadcrumb subsystem** is the flagship feature of v1.1.1. It gives Claude
-(and you) crash-recoverable, auditable tracking for every multi-step operation.
+v1.2.11 is the first version of local that **builds cleanly from a standalone public clone** — no private workspace required.
 
-Seven tools — `breadcrumb_start`, `breadcrumb_step`, `breadcrumb_complete`,
+- **`cpc-breadcrumbs` moved to git dependency** — pinned to `josephwander-arch/cpc-breadcrumbs @ v0.1.0`, unblocking standalone `cargo build` from a fresh clone
+- **`Cargo.lock` committed** — reproducible CI builds without dependency drift
+- **License metadata** — `Apache-2.0` license, repository URL, and description added to `Cargo.toml`
+- **Mojibake cleanup** — stripped stray U+009D control characters from `dashboard.html` and UTF-8 BOM from `src/tools/planner.rs`
+
+### Highlights since v1.1.1
+
+| Version | Headline |
+|---------|----------|
+| v1.2.9 | HTTP body cap raised to 500KB, breadcrumb auto-start noise removed, `breadcrumb_list` filter param, license changed to Apache-2.0 |
+| v1.2.8 | `local_health` diagnostic tool, `cpc-paths` portable path discovery |
+| v1.2.7 | Identity detection fixes, `breadcrumb_adopt` + `breadcrumb_list` tools |
+| v1.2.6 | `cpc-breadcrumbs` shared crate — multi-project concurrent breadcrumbs, file locking, archiving |
+
+<details>
+<summary>Full release history (v1.1.1 and earlier)</summary>
+
+### v1.1.1 — Breadcrumb Operation Tracking
+
+The breadcrumb subsystem was the flagship feature of v1.1.1. Seven tools —
+`breadcrumb_start`, `breadcrumb_step`, `breadcrumb_complete`,
 `breadcrumb_abort`, `breadcrumb_status`, `breadcrumb_backup` — plus
-`breadcrumb_clear` for bulk cleanup. Ported from the autonomous server and
-adapted for local's shell-first workflow.
+`breadcrumb_clear` for bulk cleanup.
 
-**Why this matters:**
+- **Crash recovery** — every step is atomically persisted
+- **Auto-start triggers** — `powershell`, `chain`, and `psession_run` auto-create breadcrumbs
+- **Auto-cleanup** — completed breadcrumbs older than 30 days pruned on startup
+- **Shipped hooks** — `breadcrumb_start_guard.js`, `breadcrumb_enforcer.js`, `post_bash.js`, `activity_log_writer.js`
+- **Dashboard** — `dashboard.html` renders breadcrumb history and activity logs
 
-- **Crash recovery** — every step is atomically persisted. If Claude's context
-  resets mid-deploy, the next session calls `breadcrumb_status` and picks up
-  exactly where it left off.
-- **Auditability** — a durable log of what happened, when, and whether it
-  succeeded.
-- **Auto-start triggers** — `powershell`, `chain`, and `psession_run` auto-create
-  breadcrumbs when none is active, so multi-step work is never invisible.
-- **Auto-cleanup** — completed breadcrumbs older than 30 days are pruned on
-  startup (configurable via `LOCAL_BREADCRUMB_RETENTION_DAYS`).
+### v1.1.0 — Persistent Sessions & Transforms
 
-See [examples/breadcrumb_basics.md](examples/breadcrumb_basics.md) for a
-start-to-finish walkthrough.
+Persistent PowerShell sessions (`psession_*`), `smart_read` with grep/lines/max_kb,
+transform primitives (bulk rename, CSV/JSON, base64, scaffolding), archive create/extract,
+Windows registry read, `deploy_preflight`, security audit logging.
+
+### v1.0.0 — Initial Release
+
+Shell execution, file operations, persistent sessions, system tools, HTTP tools, clipboard access.
+
+</details>
 
 ---
 
@@ -39,7 +60,7 @@ start-to-finish walkthrough.
 |---|---|---|---|
 | Persistent sessions (CWD + env state) | Yes | No | No |
 | `smart_read` with grep/lines/max_kb | Yes | No | No |
-| Breadcrumb operation tracking | **Yes (v1.1.1)** | No | No |
+| Breadcrumb operation tracking | Yes | No | No |
 | Crash recovery for multi-step ops | Yes | No | No |
 | Transform primitives (bulk rename, CSV, base64) | Yes | Partial | No |
 | Archive create/extract | Yes | No | No |
@@ -53,7 +74,7 @@ crashes — local is the server.
 
 ## Tool Categories
 
-**97 tools total.** Grouped by capability:
+**100 tools total.** Grouped by capability:
 
 ### Shell & Execution (6 tools)
 `run` · `powershell` · `chain` · `smart_exec` · `plan` · `plan_assemble`
@@ -69,9 +90,10 @@ crashes — local is the server.
 ### Files (6 tools)
 `read_file` · `smart_read` · `write_file` · `append_file` · `list_dir` · `search_file`
 
-### Breadcrumbs (7 tools)
+### Breadcrumbs (9 tools)
 `breadcrumb_start` · `breadcrumb_step` · `breadcrumb_complete` ·
-`breadcrumb_abort` · `breadcrumb_status` · `breadcrumb_backup` · `breadcrumb_clear`
+`breadcrumb_abort` · `breadcrumb_status` · `breadcrumb_backup` · `breadcrumb_clear` ·
+`breadcrumb_adopt` · `breadcrumb_list`
 
 ### Transforms (14 tools)
 `transform_find_replace` · `transform_bulk_rename` · `transform_csv_to_json` ·
@@ -92,7 +114,6 @@ crashes — local is the server.
 
 ### WSL (4 tools)
 `wsl_run` · `wsl_bg` · `wsl_log` · `wsl_status`
-
 
 ### System (5 tools)
 `system_info` · `list_process` · `kill_process` · `port_check` · `get_env`
@@ -118,8 +139,8 @@ crashes — local is the server.
 ### Config & Deploy (4 tools)
 `config_validate` · `config_backup` · `config_backup_operating` · `deploy_preflight`
 
-### Infrastructure (3 tools)
-`server_health` · `tool_fallback` · `tail_file`
+### Infrastructure (4 tools)
+`server_health` · `local_health` · `tool_fallback` · `tail_file`
 
 ### Agent Identity — bag tools (3 tools)
 `bag_tag` · `bag_read` · `bag_clear`
@@ -156,8 +177,8 @@ Download `local.exe` for your architecture from the
 
 | Architecture | Binary |
 |---|---|
-| x64 | `local_x64_windows.exe` |
-| ARM64 | `local_arm64_windows.exe` |
+| x64 | `local_v1.2.11_windows_x64.exe` |
+| ARM64 | `local_v1.2.11_windows_arm64.exe` |
 
 Place it wherever you keep MCP server binaries (e.g. `C:\CPC\servers\`).
 
@@ -256,8 +277,6 @@ activity log in real time.
 | Environment Variable | Default | Purpose |
 |---|---|---|
 | `LOCAL_BREADCRUMB_RETENTION_DAYS` | `30` | Auto-prune completed breadcrumbs older than N days |
-
----
 
 ---
 

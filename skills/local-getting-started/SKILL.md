@@ -1,12 +1,11 @@
 ---
 name: local-getting-started
-reference_tier: 1
-description: 'Getting started with CPC Local — the 76-tool Windows filesystem, shell, and session server. Use when: first time using local, need file I/O, shell commands, git ops, transforms, PowerShell sessions, SQLite queries, or Windows registry access.'
+description: 'Getting started with local — the 100-tool Windows filesystem, shell, and session server. Use when: first time using local, need file I/O, shell commands, git ops, transforms, PowerShell sessions, SQLite queries, or Windows registry access.'
 ---
 
 ## What Local Is
 
-A single MCP server (local.exe) with 76 tools across 16 modules. It handles everything between your AI agent and the Windows filesystem, shell, and system.
+A single MCP server (local.exe) with 100 tools across 16 modules. It handles everything between your AI agent and the Windows filesystem, shell, and system.
 
 | Module | Tools | What It Does |
 |--------|-------|-------------|

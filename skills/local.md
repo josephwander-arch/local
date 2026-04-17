@@ -1,6 +1,6 @@
 ---
 name: local
-version: 1.1.1
+version: 1.2.11
 description: Windows-native MCP server — shell, files, sessions, transforms, and breadcrumb operation tracking
 triggers:
   - shell
@@ -23,12 +23,12 @@ platform: windows
 audience: MCP builders shipping on Windows
 ---
 
-# local MCP Server — Skill Reference (v1.1.1)
+# local MCP Server — Skill Reference (v1.2.11)
 
 ## Overview
 
 `local` is a Windows-native MCP server that gives Claude shell access, file
-operations, persistent sessions, bulk transforms, and — new in v1.1.1 — a
+operations, persistent sessions, bulk transforms, and a
 **breadcrumb operation tracking system** for multi-step work.
 
 **What makes local different from Desktop Commander or Anthropic's filesystem MCP:**
@@ -37,7 +37,7 @@ operations, persistent sessions, bulk transforms, and — new in v1.1.1 — a
 |---|---|---|---|
 | Persistent sessions (CWD + env state) | Yes | No | No |
 | `smart_read` with grep/lines/max_kb | Yes | No | No |
-| Breadcrumb operation tracking | Yes (v1.1.1) | No | No |
+| Breadcrumb operation tracking | Yes | No | No |
 | Crash recovery for multi-step ops | Yes | No | No |
 | Transform primitives (bulk rename, CSV, base64) | Yes | Partial | No |
 | Archive create/extract | Yes | No | No |
@@ -51,7 +51,7 @@ crashes — local is the server.
 
 ## The Breadcrumb System
 
-This is the v1.1.1 headline feature. Breadcrumbs let you track multi-step
+Breadcrumbs let you track multi-step
 operations with atomic persistence, crash recovery, and bulk cleanup.
 
 ### Why Breadcrumbs Exist
@@ -159,20 +159,20 @@ environment variable:
 
 Here's a realistic multi-step operation tracked from start to finish.
 
-**Scenario:** Build and deploy `autonomous.exe` to `C:\CPC\servers\`.
+**Scenario:** Build and deploy `myserver.exe` to your servers directory.
 
 ```
 Step 1: breadcrumb_start
-  title: "Deploy autonomous.exe v2.3 | targets: C:\CPC\servers\autonomous.exe"
+  title: "Deploy myserver.exe v2.3 | targets: myserver.exe"
   steps: ["archive current binary", "build release", "copy binary", "verify size", "smoke test"]
 
 Step 2: breadcrumb_backup
   label: "pre-deploy backup"
-  note: "Current autonomous.exe is 12,308 KB, built 2026-04-10 01:06"
+  note: "Current myserver.exe is 12,308 KB, built 2026-04-10 01:06"
   → Recovery point saved. If deploy fails, restore from archive.
 
 Step 3: archive_create
-  source: "C:\CPC\servers\autonomous.exe"
+  source: "C:\CPC\servers\myserver.exe"
   dest: "C:\CPC\servers\archive\autonomous_20260411.zip"
 
 Step 4: breadcrumb_step
@@ -181,7 +181,7 @@ Step 4: breadcrumb_step
   status: "success"
 
 Step 5: run (cargo build --release)
-  → Build succeeds, new binary at target\release\autonomous.exe (12,450 KB)
+  → Build succeeds, new binary at target\release\myserver.exe (12,450 KB)
 
 Step 6: breadcrumb_step
   step: "build release"
@@ -192,7 +192,7 @@ Step 7: (copy binary to servers/)
 
 Step 8: breadcrumb_step
   step: "copy binary"
-  result: "copied to C:\CPC\servers\autonomous.exe"
+  result: "copied to C:\CPC\servers\myserver.exe"
   status: "success"
 
 Step 9: (verify file size)
@@ -210,13 +210,13 @@ Step 12: breadcrumb_step
   status: "success"
 
 Step 13: breadcrumb_complete
-  summary: "autonomous.exe v2.3 deployed. 12,308→12,450 KB. All 5 steps passed."
+  summary: "myserver.exe v2.3 deployed. 12,308→12,450 KB. All 5 steps passed."
 ```
 
 If Claude's context had reset between step 8 and step 9:
 ```
 breadcrumb_status →
-  title: "Deploy autonomous.exe v2.3"
+  title: "Deploy myserver.exe v2.3"
   completed: ["archive current binary", "build release", "copy binary"]
   next: "verify size"
   backup: "pre-deploy backup" (pre-deploy state saved)
@@ -263,7 +263,7 @@ Persistent sessions keep state:
 session_create(name="deploy", shell="powershell")
 session_run(name="deploy", command="cd C:\CPC\servers")
 session_run(name="deploy", command="$env:RUST_LOG='debug'")
-session_run(name="deploy", command=".\autonomous.exe --health")
+session_run(name="deploy", command=".\myserver.exe --health")
 # CWD and env vars persist across all three commands
 session_destroy(name="deploy")
 ```
