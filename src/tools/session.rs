@@ -160,7 +160,7 @@ impl PersistentSession {
                 self.history.push(command.to_string());
 
                 // Auto-checkpoint every 5 commands
-                if self.history.len() % 5 == 0 {
+                if self.history.len().is_multiple_of(5) {
                     self.auto_checkpoint();
                 }
 
@@ -803,7 +803,7 @@ fn session_recover(args: &Value) -> Value {
     // Create new session with restored state
     // First spawn a new PowerShell process
     let mut cmd = std::process::Command::new("powershell.exe");
-    cmd.args(&["-NoProfile", "-NoExit", "-Command", "-"]);
+    cmd.args(["-NoProfile", "-NoExit", "-Command", "-"]);
     cmd.stdin(std::process::Stdio::piped());
     cmd.stdout(std::process::Stdio::piped());
     cmd.stderr(std::process::Stdio::piped());

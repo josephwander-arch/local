@@ -284,7 +284,7 @@ fn git_status(args: &Value) -> Value {
         if line.len() < 3 {
             continue;
         }
-        let index = line.chars().nth(0).unwrap_or(' ');
+        let index = line.chars().next().unwrap_or(' ');
         let worktree = line.chars().nth(1).unwrap_or(' ');
         let file = line[3..].to_string();
 
@@ -332,7 +332,7 @@ fn git_log(args: &Value) -> Value {
                     .map(|line| {
                         let parts: Vec<&str> = line.splitn(2, ' ').collect();
                         json!({
-                            "hash": parts.get(0).unwrap_or(&""),
+                            "hash": parts.first().unwrap_or(&""),
                             "message": parts.get(1).unwrap_or(&"")
                         })
                     })
@@ -344,7 +344,7 @@ fn git_log(args: &Value) -> Value {
                     .map(|line| {
                         let parts: Vec<&str> = line.split('|').collect();
                         json!({
-                            "hash": parts.get(0).unwrap_or(&""),
+                            "hash": parts.first().unwrap_or(&""),
                             "message": parts.get(1).unwrap_or(&""),
                             "author": parts.get(2).unwrap_or(&""),
                             "when": parts.get(3).unwrap_or(&"")

@@ -499,7 +499,7 @@ fn hash_file(args: &Value) -> Value {
     // Use PowerShell for hashing since we don't have crypto deps
     let algo_upper = algorithm.to_uppercase();
     let result = std::process::Command::new("powershell.exe")
-        .args(&[
+        .args([
             "-Command",
             &format!(
                 "(Get-FileHash -Path '{}' -Algorithm {}).Hash",
