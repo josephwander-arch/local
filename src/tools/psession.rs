@@ -29,7 +29,7 @@ struct PersistentSession {
 fn start_reader(stream: impl std::io::Read + Send + 'static, buffer: Arc<Mutex<Vec<String>>>) {
     thread::spawn(move || {
         let reader = BufReader::new(stream);
-        for line in reader.lines().flatten() {
+        for line in reader.lines().map_while(Result::ok) {
             buffer.lock().unwrap().push(line);
         }
     });
@@ -350,7 +350,7 @@ fn psession_read(args: &Value) -> Value {
 
     let buf = session.output_buffer.lock().unwrap();
     let total = buf.len();
-    let start = if total > tail_n { total - tail_n } else { 0 };
+    let start = total.saturating_sub(tail_n);
 
     json!({
         "session_id": session_id,

@@ -193,7 +193,7 @@ fn execute_route(route: &str, command: &str, cwd: Option<&str>) -> Value {
             )
         }
         "powershell" => raw::execute("powershell", &json!({"command": command})),
-        "raw_run" | _ => raw::execute("raw_run", &json!({"command": command})),
+        _ => raw::execute("raw_run", &json!({"command": command})),
     }
 }
 

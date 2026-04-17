@@ -408,7 +408,7 @@ fn raw_read_search(path: &str, pattern: &str) -> Value {
         }
         // Limit matches to prevent huge output
         if matches.len() >= 100 {
-            matches.push(format!("[...truncated at 100 matches]"));
+            matches.push("[...truncated at 100 matches]".to_string());
             break;
         }
     }
@@ -527,14 +527,13 @@ fn raw_list(args: &Value) -> Value {
     let depth = args.get("depth").and_then(|v| v.as_i64()).unwrap_or(2) as usize;
 
     let mut output = Vec::new();
-    list_recursive(Path::new(path), path, depth, 0, &mut output);
+    list_recursive(Path::new(path), depth, 0, &mut output);
 
     json!(output.join("\n"))
 }
 
 fn list_recursive(
     base: &Path,
-    root: &str,
     max_depth: usize,
     current_depth: usize,
     output: &mut Vec<String>,
@@ -559,7 +558,7 @@ fn list_recursive(
         if path.is_dir() {
             output.push(format!("{}{}/", prefix, name));
             if current_depth < max_depth {
-                list_recursive(&path, root, max_depth, current_depth + 1, output);
+                list_recursive(&path, max_depth, current_depth + 1, output);
             }
         } else {
             output.push(format!("{}{}", prefix, name));

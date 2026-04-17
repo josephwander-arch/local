@@ -64,7 +64,7 @@ fn execute_query(args: &Value) -> Value {
     let mut rows = Vec::new();
     let result = stmt.query_map([], |row| {
         let mut obj = serde_json::Map::new();
-        for i in 0..column_count {
+        for (i, col_name) in column_names.iter().enumerate().take(column_count) {
             let val: Value = match row.get_ref(i) {
                 Ok(rusqlite::types::ValueRef::Null) => Value::Null,
                 Ok(rusqlite::types::ValueRef::Integer(n)) => json!(n),
@@ -77,7 +77,7 @@ fn execute_query(args: &Value) -> Value {
                 }
                 Err(_) => Value::Null,
             };
-            obj.insert(column_names[i].clone(), val);
+            obj.insert(col_name.clone(), val);
         }
         Ok(Value::Object(obj))
     });
