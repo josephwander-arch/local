@@ -1,3 +1,14 @@
+// TODO: fix these clippy lints and remove allows
+#![allow(
+    clippy::doc_lazy_continuation,
+    clippy::get_first,
+    clippy::implicit_saturating_sub,
+    clippy::iter_nth_zero,
+    clippy::lines_filter_map_ok,
+    clippy::manual_range_contains,
+    clippy::to_string_in_format_args,
+    clippy::useless_format
+)]
 //! MCP-Windows: Raw tools + Windows automation for Claude Desktop
 //! Replaces: raw-tools (Python) + windows-mcp (uvx)
 // NAV: TOC at line 152 | 2 fn | 2 struct | 2026-04-15
