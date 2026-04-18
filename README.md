@@ -8,14 +8,15 @@ Version 1.2.12 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/lo
 
 ---
 
-## What's New in v1.2.12: Git Parity with Programmer
+## What's New in v1.2.13: Clippy Cleanup + Async Deadlock Fix
 
-v1.2.12 adds 5 git tools (`git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary`) so local and programmer are interchangeable for git operations. Schemas are identical — same params, same return shapes.
+v1.2.13 fixes a 4-minute MCP deadlock on long-running powershell child processes (sync `std::process` replaced with `spawn` + background reader thread + `recv_timeout`) and removes blanket clippy suppressions in favor of targeted lint fixes.
 
 ### Highlights since v1.1.1
 
 | Version | Headline |
 |---------|----------|
+| v1.2.13 | Async powershell deadlock fix, clippy cleanup |
 | v1.2.12 | 5 new git tools for programmer parity: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary` |
 | v1.2.11 | First standalone public build — git deps, Cargo.lock, mojibake cleanup |
 | v1.2.9 | HTTP body cap raised to 500KB, breadcrumb auto-start noise removed, `breadcrumb_list` filter param, license changed to Apache-2.0 |
