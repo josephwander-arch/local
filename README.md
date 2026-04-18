@@ -4,6 +4,8 @@
 
 Version 1.2.12 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
 
+**Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) · [hands](https://github.com/josephwander-arch/hands) · [workflow](https://github.com/josephwander-arch/workflow) · [cpc-paths](https://github.com/josephwander-arch/cpc-paths) · [cpc-breadcrumbs](https://github.com/josephwander-arch/cpc-breadcrumbs)
+
 ---
 
 ## What's New in v1.2.12: Git Parity with Programmer
@@ -66,6 +68,8 @@ Shell execution, file operations, persistent sessions, system tools, HTTP tools,
 **Minimum viable shell + operation tracking for non-developer users.** If you
 need to run commands, move files, and not lose your place when something
 crashes — local is the server.
+
+`local overlaps with the programmer server (an internal CPC component) — local is the public subset, designed for standalone use.`
 
 ---
 
@@ -210,6 +214,16 @@ Run the included health check:
 This checks that the binary exists, the state directory is writable, and git
 is available.
 
+### Build from Source
+
+```bash
+git clone https://github.com/josephwander-arch/local.git
+cd local
+cargo build --release
+```
+
+Binary appears at `target/release/local.exe`. Requires Rust stable toolchain — nightly is not required.
+
 ---
 
 ## Quickstart
@@ -307,6 +321,10 @@ Once `local` is running, Claude can install hands, manager, echo, and workflow f
 > `Install hands, manager, echo, and workflow from github.com/josephwander-arch/ and register them in my Claude Desktop config.`
 
 Claude will use `http_download` to pull each binary from GitHub Releases, place them alongside `local.exe`, and edit `claude_desktop_config.json` for you. One manual install, four automated follow-ups.
+
+## Contributing
+
+Issues welcome; PRs considered but this is primarily maintained as part of the CPC stack.
 
 ## License
 
