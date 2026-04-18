@@ -23,7 +23,7 @@ All notable changes to the local MCP server are documented here.
 ## [1.2.12] - 2026-04-17
 
 ### Added
-- **5 new git tools** for parity with programmer: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary`. Identical schemas and behavior to programmer's equivalents — use local and programmer interchangeably for git ops from Claude Desktop, Claude Code, or Cowork. Brings local's git tool count from 8 to 13.
+- **5 new git tools**: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary`. Brings local's git tool count from 8 to 13.
 
 ## [1.2.11] - 2026-04-16
 
@@ -72,23 +72,20 @@ All notable changes to the local MCP server are documented here.
   `cpc-breadcrumbs`. New `machine_name()` helper uses
   `COMPUTERNAME → HOSTNAME → hostname::get()` syscall → `"unknown"` (true last resort).
   `local_ctx()` now calls `cpc_breadcrumbs::machine_name()` instead of bare env var.
-- **Session ID no longer stale** — Both `local` and `autonomous` now generate a
+- **Session ID no longer stale** — `local` now generates a
   per-process startup session ID (`sess_{server}_{pid}_{unix_ts}`) via `OnceLock`.
   State-derived session IDs (previous agent's session string) are replaced on startup.
   Override: set `CPC_SESSION_ID` env var.
 
 ### Added
 - **`breadcrumb_adopt`** — Reassign ownership of a breadcrumb to the current actor.
-  Available in both `local` and `autonomous` servers.
 - **`breadcrumb_list`** — List breadcrumbs from archive by scope (`active`/`today`/`week`/`all`).
-  Available in both `local` and `autonomous` servers.
 
 ## [1.2.6] - 2026-04-15 — Stage A++: cpc-breadcrumbs shared crate
 
 ### Added
 - **`cpc-breadcrumbs/`** — New shared breadcrumb crate bundled as path dependency.
-  Replaces both the autonomous and local standalone implementations with a single
-  source of truth. Provides: multi-project concurrent breadcrumbs, per-project
+  Consolidates CPC's breadcrumb implementations into a single source of truth. Provides: multi-project concurrent breadcrumbs, per-project
   file locking with 3s retry (fs2 flock), conflict detection (30s window,
   different writer_session → `conflict_warning` in response), Drive-synced archiving
   on complete/abort (`C:\My Drive\Volumes\breadcrumbs\completed\{date}\bc_{id}.json`),
@@ -143,8 +140,8 @@ All notable changes to the local MCP server are documented here.
 
 ### Added — Breadcrumb Operation Tracking Subsystem
 
-The flagship feature of v1.1.1. Six breadcrumb tools ported from the autonomous
-server and adapted for local's shell-first workflow:
+The flagship feature of v1.1.1. Six breadcrumb tools adapted for local's
+shell-first workflow:
 
 - **`breadcrumb_start`** — begin tracking a multi-step operation with a
   descriptive title and planned step list

@@ -1,5 +1,7 @@
 # local MCP Server
 
+[![CI](https://github.com/josephwander-arch/local/actions/workflows/ci.yml/badge.svg)](https://github.com/josephwander-arch/local/actions/workflows/ci.yml)
+
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
 Version 1.2.13 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
@@ -17,7 +19,7 @@ v1.2.13 fixes a 4-minute MCP deadlock on long-running powershell child processes
 | Version | Headline |
 |---------|----------|
 | v1.2.13 | Async powershell deadlock fix, clippy cleanup |
-| v1.2.12 | 5 new git tools for programmer parity: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary` |
+| v1.2.12 | 5 new git tools: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary` |
 | v1.2.11 | First standalone public build — git deps, Cargo.lock, mojibake cleanup |
 | v1.2.9 | HTTP body cap raised to 500KB, breadcrumb auto-start noise removed, `breadcrumb_list` filter param, license changed to Apache-2.0 |
 | v1.2.8 | `local_health` diagnostic tool, `cpc-paths` portable path discovery |
@@ -70,7 +72,7 @@ Shell execution, file operations, persistent sessions, system tools, HTTP tools,
 need to run commands, move files, and not lose your place when something
 crashes — local is the server.
 
-`local overlaps with the programmer server (an internal CPC component) — local is the public subset, designed for standalone use.`
+`local` is designed as a standalone, publicly-consumable MCP server for Windows environments. It ships as a single Rust binary with zero runtime dependencies — install it, point your MCP client at it, and you have a complete shell + filesystem + transforms toolchain.
 
 ---
 
@@ -279,33 +281,35 @@ activity log in real time.
 
 ## Compatible With
 
-Works with any MCP client. Common install channels:
+`local` is designed to work standalone — one binary, pointed at by one MCP client, and you have shell + filesystem + breadcrumbs. Pair it with other CPC servers when you want broader capabilities.
 
-- **Claude Desktop** (the main chat app) — add to `claude_desktop_config.json`. See `claude_desktop_config.example.json` in this repo.
-- **Claude Code** — add to `~/.claude/mcp.json`, or point your `CLAUDE.md` at `skills/local.md` to load it as a skill instead.
-- **OpenAI Codex CLI** — register via Codex's MCP config, or load the skill directly.
-- **Gemini CLI** — register via Gemini's MCP config, or load the skill directly.
+- Pair with [manager](https://github.com/josephwander-arch/manager) when you want multi-backend orchestration on top of local's execution tools.
+- Pair with [hands](https://github.com/josephwander-arch/hands) when a script needs to reach into a browser or Windows UI layer.
+- Pair with [workflow](https://github.com/josephwander-arch/workflow) when scripts call APIs you've graduated from browser discovery to stored HTTP patterns.
 
-**Two install layouts:**
+Host clients: Claude Desktop (add to `claude_desktop_config.json`; see `claude_desktop_config.example.json`), Claude Code (`~/.claude/mcp.json`), OpenAI Codex CLI, or Gemini CLI. If your client supports Anthropic skill files, you can load `skills/local.md` directly for skill-only (no-server) mode — useful when you want the behavioral guidance without booting the binary.
 
-1. **Local folder** — clone or download this repo, then point your client at the local directory or the extracted `.exe` binary.
-2. **Installed binary** — grab the `.exe` from the [Releases](https://github.com/josephwander-arch/local/releases) page, place it wherever you keep your MCP binaries, then register its path in your client's config.
+### First-run tip for Claude clients
 
-**Also ships as a skill** — if your client supports Anthropic skill files, load `skills/local.md` directly. Skill-only mode gives you the behavioral guidance without running the server; useful for planning, review, or read-only workflows.
+Toggle **tools always loaded** in Claude's tool settings (Claude Desktop: Settings → Tools). `local` exposes ~105 tools across shell, sessions, transforms, and git — clients that lazy-load occasionally miss the full set on first use. Always-loaded ensures every `local:*` tool is visible as soon as the server registers.
 
-### First-run tip: enable "always-loaded tools"
+### Bootstrap the rest of the stack via local itself
 
-For the smoothest experience, enable **tools always loaded** in your Claude client settings (Claude Desktop: Settings → Tools, or equivalent in Claude Code / Codex / Gemini). This ensures Claude recognizes the tool surface on first use without needing to re-discover it every session. Most users hit friction on day one because this is off by default.
+Since `local` ships `http_download`, `write_file`, and shell execution, it's a natural installer for its siblings. Ask Claude:
 
-### Bootstrap the rest of the toolkit *(optional convenience)*
+> `Install hands, manager, and workflow from github.com/josephwander-arch/ and register them in my Claude Desktop config.`
 
-`local` is not a required install path — each of the other four MCP servers can be installed directly using the steps in Compatible With above. But if you already have `local` running, you can skip the manual work for the rest.
+Claude uses `http_download` to pull each release binary, places them alongside `local.exe`, edits `claude_desktop_config.json`, and verifies each starts. One manual `local` install, three automated follow-ups.
 
-Once `local` is running, Claude can install hands, manager, echo, and workflow for you using local's shell, HTTP, archive, and file-editing tools. Ask Claude something like:
+## Failure modes
 
-> `Install hands, manager, echo, and workflow from github.com/josephwander-arch/ and register them in my Claude Desktop config.`
+`local` is a thin layer over real OS operations, so failures mostly map directly to what the OS would tell you:
 
-Claude will use `http_download` to pull each binary from GitHub Releases, place them alongside `local.exe`, and edit `claude_desktop_config.json` for you. One manual install, four automated follow-ups.
+- **Path outside the workspace** — file tools return an explicit `path_not_allowed` error. They never silently write to an unexpected location; set your workspace root deliberately.
+- **Command not found / non-zero exit** — `run`, `powershell`, and `session_run` surface the real exit code and captured stderr. Read the error rather than retrying blindly.
+- **Long-running process hangs** — use `psession_*` (persistent shell) for commands that need interactive state; `run` is best for short one-shots with a hard timeout.
+- **Git operation against a dirty tree** — `git_*` tools refuse destructive operations (reset --hard, force checkout) unless explicitly confirmed. Commit or stash first.
+- **HTTP tools against TLS-broken hosts** — `http_*` bubbles the underlying TLS error; it does not silently fall back to insecure mode.
 
 ## Contributing
 
@@ -316,14 +320,6 @@ Issues welcome; PRs considered but this is primarily maintained as part of the C
 Apache License 2.0 — see [LICENSE](LICENSE).
 
 Copyright 2026 Joseph Wander.
-
----
-
-## Donations
-
-If local saves you time, consider supporting development:
-
-**$NeverRemember** (Cash App)
 
 ---
 

@@ -4,6 +4,7 @@ version = "1.2.13"
 edition = "2021"
 description = "Windows MCP - Raw tools + Windows automation for Claude Desktop"
 license = "Apache-2.0"
+readme = "README.md"
 repository = "https://github.com/josephwander-arch/local"
 keywords = ["cpc", "mcp", "windows", "filesystem", "shell"]
 categories = ["command-line-utilities", "filesystem", "development-tools"]
