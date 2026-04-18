@@ -2,7 +2,7 @@
 
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
-Version 1.2.12 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
+Version 1.2.13 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
 
 **Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) · [hands](https://github.com/josephwander-arch/hands) · [workflow](https://github.com/josephwander-arch/workflow) · [cpc-paths](https://github.com/josephwander-arch/cpc-paths) · [cpc-breadcrumbs](https://github.com/josephwander-arch/cpc-breadcrumbs)
 
