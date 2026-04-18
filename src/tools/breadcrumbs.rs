@@ -6,16 +6,15 @@
 //!   - breadcrumb_clear tool (local-specific active-state cleanup)
 //!   - breadcrumb_list with filter param (active | archived | all)
 //!   - get_definitions / execute dispatch
-//!
 //! Removed in v1.2.9: auto_breadcrumb_start / auto_breadcrumb_advance
 //!   (was auto-starting breadcrumbs for every powershell/chain/psession_run call,
-//!   polluting breadcrumb_list with single-step noise)
+//!    polluting breadcrumb_list with single-step noise)
 //!
 //! All storage/locking/conflict/archive logic is in cpc-breadcrumbs.
 // NAV: TOC at line 424 | 14 fn | 0 struct | 2026-04-15
 
-use cpc_breadcrumbs::WriterContext;
 use serde_json::{json, Value};
+use cpc_breadcrumbs::WriterContext;
 use std::sync::OnceLock;
 
 // ── Per-process startup session ID ─────────────────────────────────────────────
@@ -61,23 +60,13 @@ pub fn startup_cleanup() {
 // ── Tool handlers ─────────────────────────────────────────────────────────────
 
 fn breadcrumb_start(args: &Value) -> Value {
-    let name = args
-        .get("name")
-        .and_then(|v| v.as_str())
-        .unwrap_or("unnamed");
+    let name = args.get("name").and_then(|v| v.as_str()).unwrap_or("unnamed");
     let steps: Vec<String> = args
         .get("steps")
         .and_then(|v| v.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
-        })
+        .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
-    let project_id = args
-        .get("project_id")
-        .and_then(|v| v.as_str())
-        .map(String::from);
+    let project_id = args.get("project_id").and_then(|v| v.as_str()).map(String::from);
     let ctx = local_ctx();
 
     match cpc_breadcrumbs::start(name, steps, project_id, &ctx) {
@@ -91,11 +80,7 @@ fn breadcrumb_step(args: &Value) -> Value {
     let files: Vec<String> = args
         .get("files_changed")
         .and_then(|v| v.as_array())
-        .map(|a| {
-            a.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
-        })
+        .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
         .unwrap_or_default();
     let breadcrumb_id = args.get("breadcrumb_id").and_then(|v| v.as_str());
     let ctx = local_ctx();
@@ -129,12 +114,14 @@ fn breadcrumb_abort(args: &Value) -> Value {
 }
 
 fn breadcrumb_status(_args: &Value) -> Value {
-    cpc_breadcrumbs::status(None).unwrap_or_else(|e| json!({ "error": e.to_string() }))
+    cpc_breadcrumbs::status(None, Some("active"))
+        .unwrap_or_else(|e| json!({ "error": e.to_string() }))
 }
 
 fn breadcrumb_backup(args: &Value) -> Value {
     let breadcrumb_id = args.get("breadcrumb_id").and_then(|v| v.as_str());
-    cpc_breadcrumbs::backup(breadcrumb_id).unwrap_or_else(|e| json!({ "error": e.to_string() }))
+    cpc_breadcrumbs::backup(breadcrumb_id)
+        .unwrap_or_else(|e| json!({ "error": e.to_string() }))
 }
 
 fn breadcrumb_adopt(args: &Value) -> Value {
@@ -153,13 +140,13 @@ fn breadcrumb_list(args: &Value) -> Value {
     // filter: "active" | "archived" | "all"  (new in v1.2.9)
     // scope: "active" | "today" | "week" | "all"  (legacy, used when filter is absent)
     let filter = args.get("filter").and_then(|v| v.as_str());
-    let scope = args.get("scope").and_then(|v| v.as_str());
+    let scope  = args.get("scope").and_then(|v| v.as_str());
 
     match filter {
         Some("active") => {
-            // Live active entries from C:\CPC\state\breadcrumbs\
-            let result =
-                cpc_breadcrumbs::status(None).unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            // Live active entries from Volumes\breadcrumbs\active\
+            let result = cpc_breadcrumbs::status(None, Some("active"))
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
             let mut out = result;
             if let Some(bcs) = out.get_mut("breadcrumbs").and_then(|v| v.as_array_mut()) {
                 for bc in bcs.iter_mut() {
@@ -172,7 +159,7 @@ fn breadcrumb_list(args: &Value) -> Value {
             out
         }
         Some("archived") => {
-            // Archived entries from Drive: C:\My Drive\Volumes\breadcrumbs\completed\{date}\
+            // Archived entries from Volumes\breadcrumbs\completed\{date}\
             let eff_scope = scope.unwrap_or("today");
             let mut result = cpc_breadcrumbs::list(Some(eff_scope))
                 .unwrap_or_else(|e| json!({ "error": e.to_string() }));
@@ -188,8 +175,8 @@ fn breadcrumb_list(args: &Value) -> Value {
         }
         Some("all") => {
             // Merge active (state dir) + archived (Drive)
-            let active_result =
-                cpc_breadcrumbs::status(None).unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            let active_result = cpc_breadcrumbs::status(None, Some("active"))
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
             let eff_scope = scope.unwrap_or("today");
             let archived_result = cpc_breadcrumbs::list(Some(eff_scope))
                 .unwrap_or_else(|e| json!({ "error": e.to_string() }));
@@ -204,10 +191,7 @@ fn breadcrumb_list(args: &Value) -> Value {
                     combined.push(entry);
                 }
             }
-            if let Some(bcs) = archived_result
-                .get("breadcrumbs")
-                .and_then(|v| v.as_array())
-            {
+            if let Some(bcs) = archived_result.get("breadcrumbs").and_then(|v| v.as_array()) {
                 for bc in bcs {
                     let mut entry = bc.clone();
                     if let Some(obj) = entry.as_object_mut() {
@@ -224,50 +208,39 @@ fn breadcrumb_list(args: &Value) -> Value {
         }
         None => {
             // Legacy: scope param (default: today, from cpc_breadcrumbs::list)
-            cpc_breadcrumbs::list(scope).unwrap_or_else(|e| json!({ "error": e.to_string() }))
+            cpc_breadcrumbs::list(scope)
+                .unwrap_or_else(|e| json!({ "error": e.to_string() }))
         }
         _ => json!({ "error": "Invalid filter value. Accepted: active | archived | all" }),
     }
 }
 
-/// Clear active breadcrumb state (local CPC state dir).
+/// Clear active breadcrumb state (Volumes active dir).
 /// Does NOT touch Drive archives — those are permanent.
 fn breadcrumb_clear(args: &Value) -> Value {
     let force = args.get("force").and_then(|v| v.as_bool()).unwrap_or(false);
-    let dry_run = args
-        .get("dry_run")
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false);
+    let dry_run = args.get("dry_run").and_then(|v| v.as_bool()).unwrap_or(false);
 
-    let state_dir = std::path::PathBuf::from(r"C:\CPC\state\breadcrumbs");
-    if !state_dir.exists() {
-        return json!({ "cleared": 0, "note": "State dir does not exist" });
-    }
+    let count = cpc_breadcrumbs::active_count();
 
     if dry_run {
-        // Just report what's there
-        let index = cpc_breadcrumbs::read_active_index();
         return json!({
             "dry_run": true,
-            "active_breadcrumbs": index.len(),
+            "active_breadcrumbs": count,
             "note": "Set dry_run=false to clear"
         });
     }
 
-    if !force {
-        // Check if any active breadcrumbs
-        let index = cpc_breadcrumbs::read_active_index();
-        if !index.is_empty() {
-            return json!({
-                "error": format!("{} active breadcrumb(s) in progress. Use force=true to clear them.", index.len())
-            });
-        }
+    if !force && count > 0 {
+        return json!({
+            "error": format!("{} active breadcrumb(s) in progress. Use force=true to clear them.", count)
+        });
     }
 
     let mut cleared = 0u64;
     let mut errors: Vec<String> = Vec::new();
 
-    // If force, abort active breadcrumbs first
+    // Abort each active breadcrumb (archives it to completed/)
     if force {
         let index = cpc_breadcrumbs::read_active_index();
         let ctx = local_ctx();
@@ -280,28 +253,9 @@ fn breadcrumb_clear(args: &Value) -> Value {
         }
     }
 
-    // Clear projects dir (remove *.jsonl files)
-    let projects_dir = state_dir.join("projects");
-    if projects_dir.exists() {
-        if let Ok(entries) = std::fs::read_dir(&projects_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().and_then(|e| e.to_str()) == Some("jsonl") {
-                    match std::fs::remove_file(&path) {
-                        Ok(_) => cleared += 1,
-                        Err(e) => errors.push(format!("{}: {}", path.display(), e)),
-                    }
-                }
-            }
-        }
-    }
-
-    // Clear index
-    let _ = std::fs::remove_file(state_dir.join("active.index.json"));
-
     let mut result = json!({
         "cleared": cleared,
-        "note": "Drive archives are permanent — only local active state was cleared"
+        "note": "Active breadcrumbs aborted and archived. Drive archives are permanent."
     });
     if !errors.is_empty() {
         result["errors"] = json!(errors);
@@ -420,15 +374,15 @@ pub fn get_definitions() -> Vec<Value> {
 
 pub fn execute(name: &str, args: &Value) -> Value {
     match name {
-        "breadcrumb_start" => breadcrumb_start(args),
-        "breadcrumb_step" => breadcrumb_step(args),
+        "breadcrumb_start"    => breadcrumb_start(args),
+        "breadcrumb_step"     => breadcrumb_step(args),
         "breadcrumb_complete" => breadcrumb_complete(args),
-        "breadcrumb_abort" => breadcrumb_abort(args),
-        "breadcrumb_status" => breadcrumb_status(args),
-        "breadcrumb_backup" => breadcrumb_backup(args),
-        "breadcrumb_adopt" => breadcrumb_adopt(args),
-        "breadcrumb_list" => breadcrumb_list(args),
-        "breadcrumb_clear" => breadcrumb_clear(args),
+        "breadcrumb_abort"    => breadcrumb_abort(args),
+        "breadcrumb_status"   => breadcrumb_status(args),
+        "breadcrumb_backup"   => breadcrumb_backup(args),
+        "breadcrumb_adopt"    => breadcrumb_adopt(args),
+        "breadcrumb_list"     => breadcrumb_list(args),
+        "breadcrumb_clear"    => breadcrumb_clear(args),
         _ => json!({ "error": format!("Unknown breadcrumb tool: {}", name) }),
     }
 }
