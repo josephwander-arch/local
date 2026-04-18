@@ -173,11 +173,11 @@ Step 2: breadcrumb_backup
 
 Step 3: archive_create
   source: "C:\CPC\servers\myserver.exe"
-  dest: "C:\CPC\servers\archive\autonomous_20260411.zip"
+  dest: "C:\CPC\servers\archive\myserver_20260411.zip"
 
 Step 4: breadcrumb_step
   step: "archive current binary"
-  result: "archived to autonomous_20260411.zip (12,308 KB)"
+  result: "archived to myserver_20260411.zip (12,308 KB)"
   status: "success"
 
 Step 5: run (cargo build --release)
