@@ -153,19 +153,43 @@ crashes — local is the server.
 
 ---
 
-## Installation & Per-Machine Setup
+## Install
 
-This is a standalone Rust MCP server for Claude Desktop / Claude Code. Each machine that runs the server needs its own copy of the binary plus a few config tweaks.
+### Windows x64
 
-**Quick install:**
-1. Download the right binary from [Releases](https://github.com/josephwander-arch/local/releases) — `_arm64.exe` for Windows ARM64, `_x64.exe` for x64.
-2. Copy to `C:\CPC\servers\local.exe`.
-3. Edit `%APPDATA%\Claude\claude_desktop_config.json` — paste the snippet from [`claude_desktop_config.example.json`](./claude_desktop_config.example.json) into your `mcpServers` object.
+1. Download `local-v1.2.13-x64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
+2. Rename to `local.exe` and place in `%LOCALAPPDATA%\CPC\servers\`.
+3. Add to your `claude_desktop_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "local": {
+         "command": "%LOCALAPPDATA%\\CPC\\servers\\local.exe"
+       }
+     }
+   }
+   ```
 4. Restart Claude Desktop.
 
-For full per-machine setup (paths, breadcrumb config, git requirements), see [`docs/per_machine_setup.md`](./docs/per_machine_setup.md).
+---
 
-A future `cpc-setup.exe` helper will automate this entire process.
+### Windows ARM64
+
+1. Download `local-v1.2.13-aarch64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
+2. Rename to `local.exe` and place in `%LOCALAPPDATA%\CPC\servers\`.
+3. Add to your `claude_desktop_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "local": {
+         "command": "%LOCALAPPDATA%\\CPC\\servers\\local.exe"
+       }
+     }
+   }
+   ```
+4. Restart Claude Desktop.
+
+---
 
 ### Prerequisites
 
@@ -173,47 +197,7 @@ A future `cpc-setup.exe` helper will automate this entire process.
 - Claude Desktop or any MCP-compatible client
 - Git (optional, used by some session tools)
 
-### 1. Get the binary
-
-Download `local.exe` for your architecture from the
-[releases page](https://github.com/josephwander-arch/local/releases).
-
-| Architecture | Binary |
-|---|---|
-| x64 | `local_v1.2.12_windows_x64.exe` |
-| ARM64 | `local_v1.2.12_windows_arm64.exe` |
-
-Place it wherever you keep MCP server binaries (e.g. `C:\CPC\servers\`).
-
-### 2. Configure Claude Desktop
-
-Copy `claude_desktop_config.example.json` into your Claude Desktop config, or
-add the `local` block to your existing `mcpServers`:
-
-```json
-{
-  "mcpServers": {
-    "local": {
-      "command": "C:\\CPC\\servers\\local.exe",
-      "args": [],
-      "env": {
-        "LOCAL_BREADCRUMB_RETENTION_DAYS": "30"
-      }
-    }
-  }
-}
-```
-
-### 3. Verify
-
-Run the included health check:
-
-```powershell
-.\doctor.ps1
-```
-
-This checks that the binary exists, the state directory is writable, and git
-is available.
+For full per-machine setup (paths, breadcrumb config, git requirements), see [`docs/per_machine_setup.md`](./docs/per_machine_setup.md).
 
 ### Build from Source
 

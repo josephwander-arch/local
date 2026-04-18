@@ -4,6 +4,12 @@ All notable changes to the local MCP server are documented here.
 
 ## [Unreleased]
 
+### Added
+
+- **GitHub Actions release workflow** — `v*` tag push builds x64 (windows-latest) + ARM64 (windows-11-arm native) binaries, attaches to draft release as `local-vX.Y.Z-x64.exe` / `local-vX.Y.Z-aarch64.exe`.
+- **SECURITY.md** — security policy and reporting instructions.
+- **Platform-split install docs** — README install section split into self-contained Windows x64 and ARM64 sub-sections.
+
 ## [1.2.13] - 2026-04-17
 
 ### Fixed
