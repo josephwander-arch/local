@@ -202,7 +202,7 @@ source = "git+https://github.com/josephwander-arch/cpc-breadcrumbs?tag=v0.3.0#30
 dependencies = [
  "anyhow",
  "chrono",
- "cpc-paths",
+ "cpc-paths 0.1.0",
  "hostname",
  "serde",
  "serde_json",
@@ -213,6 +213,20 @@ dependencies = [
 name = "cpc-paths"
 version = "0.1.0"
 source = "git+https://github.com/josephwander-arch/cpc-paths?tag=v0.1.0#d78eea9a89a46b2d01aa471f64e13ccd61b126e6"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "directories",
+ "once_cell",
+ "serde",
+ "thiserror",
+ "toml",
+]
+
+[[package]]
+name = "cpc-paths"
+version = "0.1.1"
+source = "git+https://github.com/josephwander-arch/cpc-paths?tag=v0.1.1#64599715ec2a21bd3a02f2deb7b6b848d7a4a477"
 dependencies = [
  "anyhow",
  "chrono",
@@ -878,7 +892,7 @@ dependencies = [
  "base64",
  "chrono",
  "cpc-breadcrumbs",
- "cpc-paths",
+ "cpc-paths 0.1.1",
  "once_cell",
  "regex",
  "reqwest",
