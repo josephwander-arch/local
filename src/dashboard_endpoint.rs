@@ -132,9 +132,12 @@ fn build_status() -> Value {
     let sessions_list = crate::tools::session::list_active_sessions();
     let session_count = sessions_list.len();
 
+    // B1: Recent tool calls for dashboard Zone 4 feed
+    let recent_tool_calls = crate::tools::recent_tool_calls_snapshot();
+
     json!({
         "server": "local",
-        "version": "1.2.10",
+        "version": "1.2.12",
         "timestamp": chrono::Utc::now().to_rfc3339(),
         "health": {
             "paths": paths,
@@ -148,7 +151,8 @@ fn build_status() -> Value {
         "sessions": {
             "active_count": session_count,
             "active": sessions_list
-        }
+        },
+        "recent_tool_calls": recent_tool_calls
     })
 }
 
@@ -222,7 +226,7 @@ mod tests {
     fn test_status_has_required_fields() {
         let status = build_status();
         assert_eq!(status["server"], "local");
-        assert_eq!(status["version"], "1.2.10");
+        assert_eq!(status["version"], "1.2.12");
         assert!(
             status["timestamp"].is_string(),
             "timestamp must be a string"

@@ -36,13 +36,37 @@ fn local_health() -> Value {
     let archive_today = count_archive_today();
     let session_count = super::session::active_count();
 
+    // B2: Reconcile stale breadcrumbs (>48h) on health check
+    let reconcile = match std::panic::catch_unwind(|| cpc_breadcrumbs::reconcile(48)) {
+        Ok(report) => {
+            if report.stale_found.is_empty() {
+                json!({
+                    "scanned": report.scanned,
+                    "stale_swept": 0
+                })
+            } else {
+                let path_str = report.handoff_path
+                    .as_ref()
+                    .map(|p| p.to_string_lossy().to_string())
+                    .unwrap_or_default();
+                json!({
+                    "scanned": report.scanned,
+                    "stale_swept": report.handoff_entries_written,
+                    "handoff": path_str
+                })
+            }
+        }
+        Err(_) => json!({"error": "reconcile panicked"}),
+    };
+
     json!({
         "server": "local",
-        "version": "1.2.10",
+        "version": "1.2.12",
         "paths": paths,
         "breadcrumbs": {
             "active_count": active_breadcrumbs,
-            "archive_today_count": archive_today
+            "archive_today_count": archive_today,
+            "reconcile": reconcile
         },
         "sessions": {
             "active_count": session_count
@@ -359,7 +383,7 @@ mod tests {
         let result = local_health();
 
         assert_eq!(result["server"], "local", "server field must be 'local'");
-        assert_eq!(result["version"], "1.2.10", "version must be '1.2.10'");
+        assert_eq!(result["version"], "1.2.12", "version must be '1.2.10'");
         assert!(result.get("paths").is_some(), "paths field must be present");
         assert!(
             result.get("breadcrumbs").is_some(),
