@@ -4,6 +4,16 @@ All notable changes to the local MCP server are documented here.
 
 ## [Unreleased]
 
+## [1.2.13] - 2026-04-17
+
+### Fixed
+
+- **Async powershell tool deadlock fix** -- replaced synchronous `std::process::Command` with `spawn` + background reader thread + `recv_timeout`, enforcing `timeout_secs` properly. Fixes 4-minute MCP deadlock on long-running child processes that previously blocked the tokio runtime.
+
+### Changed
+
+- **Clippy cleanup** -- removed blanket clippy suppression, applied targeted lint fixes across the codebase.
+
 ## [1.2.12] - 2026-04-17
 
 ### Added
