@@ -532,12 +532,7 @@ fn raw_list(args: &Value) -> Value {
     json!(output.join("\n"))
 }
 
-fn list_recursive(
-    base: &Path,
-    max_depth: usize,
-    current_depth: usize,
-    output: &mut Vec<String>,
-) {
+fn list_recursive(base: &Path, max_depth: usize, current_depth: usize, output: &mut Vec<String>) {
     if current_depth > max_depth {
         return;
     }
