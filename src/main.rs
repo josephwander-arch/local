@@ -129,7 +129,11 @@ fn handle_request(request: &JsonRpcRequest) -> JsonRpcResponse {
             // B1: record tool call for dashboard feed
             let input_preview = {
                 let s = args.to_string();
-                if s.len() > 80 { format!("{}…", &s[..80]) } else { s }
+                if s.len() > 80 {
+                    format!("{}…", &s[..80])
+                } else {
+                    s
+                }
             };
             tools::record_tool_call(tools::ToolCallEntry {
                 tool_name: name.to_string(),

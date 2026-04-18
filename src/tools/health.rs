@@ -45,7 +45,8 @@ fn local_health() -> Value {
                     "stale_swept": 0
                 })
             } else {
-                let path_str = report.handoff_path
+                let path_str = report
+                    .handoff_path
                     .as_ref()
                     .map(|p| p.to_string_lossy().to_string())
                     .unwrap_or_default();

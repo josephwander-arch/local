@@ -129,8 +129,7 @@ fn breadcrumb_abort(args: &Value) -> Value {
 }
 
 fn breadcrumb_status(_args: &Value) -> Value {
-    cpc_breadcrumbs::status(None)
-        .unwrap_or_else(|e| json!({ "error": e.to_string() }))
+    cpc_breadcrumbs::status(None).unwrap_or_else(|e| json!({ "error": e.to_string() }))
 }
 
 fn breadcrumb_backup(args: &Value) -> Value {
@@ -159,8 +158,8 @@ fn breadcrumb_list(args: &Value) -> Value {
     match filter {
         Some("active") => {
             // Live active entries from C:\CPC\state\breadcrumbs\
-            let result = cpc_breadcrumbs::status(None)
-                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            let result =
+                cpc_breadcrumbs::status(None).unwrap_or_else(|e| json!({ "error": e.to_string() }));
             let mut out = result;
             if let Some(bcs) = out.get_mut("breadcrumbs").and_then(|v| v.as_array_mut()) {
                 for bc in bcs.iter_mut() {
@@ -189,8 +188,8 @@ fn breadcrumb_list(args: &Value) -> Value {
         }
         Some("all") => {
             // Merge active (state dir) + archived (Drive)
-            let active_result = cpc_breadcrumbs::status(None)
-                .unwrap_or_else(|e| json!({ "error": e.to_string() }));
+            let active_result =
+                cpc_breadcrumbs::status(None).unwrap_or_else(|e| json!({ "error": e.to_string() }));
             let eff_scope = scope.unwrap_or("today");
             let archived_result = cpc_breadcrumbs::list(Some(eff_scope))
                 .unwrap_or_else(|e| json!({ "error": e.to_string() }));
