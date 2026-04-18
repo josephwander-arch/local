@@ -326,5 +326,5 @@ Copyright 2026 Joseph Wander.
 ## Contact
 
 - **GitHub:** [github.com/josephwander-arch](https://github.com/josephwander-arch/)
-- **Email:** protipsinc@gmail.com
+- **Email:** josephwander@gmail.com
 - **Issues:** [github.com/josephwander-arch/local/issues](https://github.com/josephwander-arch/local/issues)
