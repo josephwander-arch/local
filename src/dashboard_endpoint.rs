@@ -137,7 +137,7 @@ fn build_status() -> Value {
 
     json!({
         "server": "local",
-        "version": "1.2.12",
+        "version": env!("CARGO_PKG_VERSION"),
         "timestamp": chrono::Utc::now().to_rfc3339(),
         "health": {
             "paths": paths,
@@ -226,7 +226,7 @@ mod tests {
     fn test_status_has_required_fields() {
         let status = build_status();
         assert_eq!(status["server"], "local");
-        assert_eq!(status["version"], "1.2.12");
+        assert_eq!(status["version"], env!("CARGO_PKG_VERSION"));
         assert!(
             status["timestamp"].is_string(),
             "timestamp must be a string"

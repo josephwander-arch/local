@@ -38,7 +38,7 @@ fn local_health() -> Value {
 
     json!({
         "server": "local",
-        "version": "1.2.13",
+        "version": env!("CARGO_PKG_VERSION"),
         "paths": paths,
         "breadcrumbs": {
             "active_count": active_breadcrumbs,
@@ -359,7 +359,7 @@ mod tests {
         let result = local_health();
 
         assert_eq!(result["server"], "local", "server field must be 'local'");
-        assert_eq!(result["version"], "1.2.12", "version must be '1.2.10'");
+        assert_eq!(result["version"], env!("CARGO_PKG_VERSION"), "version must track Cargo.toml");
         assert!(result.get("paths").is_some(), "paths field must be present");
         assert!(
             result.get("breadcrumbs").is_some(),
