@@ -1,6 +1,6 @@
 ---
 title: "Local MCP Server — Windows Filesystem, Shell, and Session Management for AI Agents"
-description: "Getting started guide for the Local Rust MCP server. Gives Claude and other AI agents 76 tools for Windows filesystem I/O, shell execution, persistent sessions, PowerShell automation, data transforms, git, SQLite, security auditing, and more over the Model Context Protocol."
+description: "Getting started guide for the Local Rust MCP server. Gives Claude and other AI agents 105 tools for Windows filesystem I/O, shell execution, persistent sessions, PowerShell automation, data transforms, git, SQLite, security auditing, and more over the Model Context Protocol."
 keywords:
   - filesystem MCP
   - Windows MCP
@@ -22,7 +22,7 @@ keywords:
 
 # Getting Started with Local
 
-Local is a Rust MCP server that provides 76 tools for Windows filesystem operations, shell execution, persistent sessions, data transforms, git, PowerShell, SQLite, security auditing, and more. It ships as a single binary with no runtime dependencies and connects to Claude Desktop, Claude Code, or any MCP-compatible client over standard JSON-RPC on stdin/stdout.
+Local is a Rust MCP server that provides 105 tools for Windows filesystem operations, shell execution, persistent sessions, data transforms, git, PowerShell, SQLite, security auditing, and more. It ships as a single binary with no runtime dependencies and connects to Claude Desktop, Claude Code, or any MCP-compatible client over standard JSON-RPC on stdin/stdout.
 
 ## Installation
 
@@ -77,7 +77,7 @@ Add it to `~/.claude/mcp.json` (global) or `.mcp.json` (per-project):
 }
 ```
 
-Restart Claude Desktop or Claude Code after editing. The 76 tools will appear in your tool list.
+Restart Claude Desktop or Claude Code after editing. The 105 tools will appear in your tool list.
 
 ## Architecture Overview
 
