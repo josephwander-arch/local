@@ -230,10 +230,7 @@ pub fn get_definitions() -> Vec<Value> {
 }
 
 fn get_repo_path(args: &Value) -> String {
-    args["repo_path"]
-        .as_str()
-        .unwrap_or(".")
-        .to_string()
+    args["repo_path"].as_str().unwrap_or(".").to_string()
 }
 
 pub fn execute(name: &str, args: &Value) -> Value {
