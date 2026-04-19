@@ -93,7 +93,7 @@ fn extraction_recipe(task: &str, _ctx: &str) -> Value {
         },
         "breadcrumb": {"recommended": false, "reason": "Standard extraction is routine. Breadcrumb if extracting 3+ insights in one pass."},
         "lead": "self",
-        "handoff_if": {"needs_search": "utonomous", "needs_semantic": "echo"},
+        "handoff_if": {"needs_search": "knowledge_server", "needs_semantic": "semantic_server"},
         "cross_server_requirements": {
             "knowledge_server": {
                 "pre": ["check_catalog - verify topic exists", "check_dedup - avoid duplicate"],
@@ -304,7 +304,7 @@ fn boot_recipe(task: &str, _ctx: &str) -> Value {
         },
         "breadcrumb": {"recommended": false, "reason": "Boot is read-only discovery."},
         "lead": "self",
-        "handoff_if": {"interrupted_operation_found": "atlas for breadcrumb resume"}
+        "handoff_if": {"interrupted_operation_found": "autonomous for breadcrumb resume"}
     })
 }
 
@@ -314,9 +314,10 @@ fn boot_recipe(task: &str, _ctx: &str) -> Value {
 /// This eliminates the need to call multiple planners for common workflows.
 fn cross_server_requirements(domain: &str) -> Value {
     match domain {
+        // Internal names kept as match arms for backward compatibility with existing callers
         "knowledge" | "atlas" | "utonomous" | "learning" => json!({
             "domain": "knowledge",
-            "servers": ["atlas", "utonomous", "learning"],
+            "servers": ["autonomous"],
             "common_requirements": {
                 "before_write": ["read current content", "check_catalog for target topic", "check_dedup if extracting"],
                 "after_write": ["check_propagation", "update_refs if structure changed"],
@@ -348,7 +349,7 @@ fn cross_server_requirements(domain: &str) -> Value {
         "ai_delegation" | "manager" | "claude-bridge" | "claude-runner" | "codex"
         | "gemini-mcp" => json!({
             "domain": "ai_delegation",
-            "servers": ["manager", "claude-bridge", "claude-runner", "codex", "gemini-mcp"],
+            "servers": ["manager"],
             "common_requirements": {
                 "before_delegate": ["clear task description with expected output format"],
                 "for_long_tasks": ["use persistent session (bridge) not fire-and-forget"],

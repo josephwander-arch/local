@@ -19,8 +19,8 @@ pub fn get_definitions() -> Vec<Value> {
                 "properties": {
                     "repo_path": {
                         "type": "string",
-                        "description": "Repository path (default: C:\\rust-mcp)",
-                        "default": "C:\\rust-mcp"
+                        "description": "Repository path (default: current directory)",
+                        "default": "."
                     }
                 }
             }
@@ -33,8 +33,8 @@ pub fn get_definitions() -> Vec<Value> {
                 "properties": {
                     "repo_path": {
                         "type": "string",
-                        "description": "Repository path (default: C:\\rust-mcp)",
-                        "default": "C:\\rust-mcp"
+                        "description": "Repository path (default: current directory)",
+                        "default": "."
                     },
                     "limit": {
                         "type": "integer",
@@ -57,8 +57,8 @@ pub fn get_definitions() -> Vec<Value> {
                 "properties": {
                     "repo_path": {
                         "type": "string",
-                        "description": "Repository path (default: C:\\rust-mcp)",
-                        "default": "C:\\rust-mcp"
+                        "description": "Repository path (default: current directory)",
+                        "default": "."
                     },
                     "message": {
                         "type": "string",
@@ -86,8 +86,8 @@ pub fn get_definitions() -> Vec<Value> {
                 "properties": {
                     "repo_path": {
                         "type": "string",
-                        "description": "Repository path (default: C:\\rust-mcp)",
-                        "default": "C:\\rust-mcp"
+                        "description": "Repository path (default: current directory)",
+                        "default": "."
                     },
                     "action": {
                         "type": "string",
@@ -114,8 +114,8 @@ pub fn get_definitions() -> Vec<Value> {
                 "properties": {
                     "repo_path": {
                         "type": "string",
-                        "description": "Repository path (default: C:\\rust-mcp)",
-                        "default": "C:\\rust-mcp"
+                        "description": "Repository path (default: current directory)",
+                        "default": "."
                     },
                     "target": {
                         "type": "string",
@@ -136,7 +136,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." },
                     "staged": { "type": "boolean", "description": "Show staged changes (default: false)", "default": false },
                     "file": { "type": "string", "description": "Specific file to diff (optional)" }
                 }
@@ -148,7 +148,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." },
                     "action": { "type": "string", "description": "list (default), create, delete", "default": "list" },
                     "name": { "type": "string", "description": "Branch name (for create/delete)" }
                 }
@@ -160,7 +160,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." },
                     "target": { "type": "string", "description": "Branch name or file path" },
                     "create": { "type": "boolean", "description": "Create new branch (-b flag)", "default": false }
                 },
@@ -186,7 +186,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." },
                     "remote": { "type": "string", "description": "Remote name (default: origin)", "default": "origin" }
                 }
             }
@@ -197,7 +197,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." },
                     "remote": { "type": "string", "description": "Remote name (default: origin)", "default": "origin" },
                     "branch": { "type": "string", "description": "Branch to push (optional)" }
                 }
@@ -209,7 +209,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" },
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." },
                     "action": { "type": "string", "description": "list (default), add, remove", "default": "list" },
                     "name": { "type": "string", "description": "Remote name (for add/remove)" },
                     "url": { "type": "string", "description": "Remote URL (for add)" }
@@ -222,7 +222,7 @@ pub fn get_definitions() -> Vec<Value> {
             "inputSchema": {
                 "type": "object",
                 "properties": {
-                    "repo_path": { "type": "string", "description": "Repository path (default: C:\\\\rust-mcp)", "default": "C:\\\\rust-mcp" }
+                    "repo_path": { "type": "string", "description": "Repository path (default: current directory)", "default": "." }
                 }
             }
         }),
@@ -232,7 +232,7 @@ pub fn get_definitions() -> Vec<Value> {
 fn get_repo_path(args: &Value) -> String {
     args["repo_path"]
         .as_str()
-        .unwrap_or("C:\\rust-mcp")
+        .unwrap_or(".")
         .to_string()
 }
 

@@ -227,8 +227,8 @@
 <div class="header">
     <h1>CPC Command Center</h1>
     <div class="header-stats">
-        <div class="hstat"><div class="val" id="stat-servers">14</div><div class="lbl">Servers</div></div>
-        <div class="hstat"><div class="val" id="stat-tools">~312</div><div class="lbl">Tools</div></div>
+        <div class="hstat"><div class="val" id="stat-servers">4</div><div class="lbl">Servers</div></div>
+        <div class="hstat"><div class="val" id="stat-tools">--</div><div class="lbl">Tools</div></div>
         <div class="hstat"><div class="val" id="stat-loaves">--</div><div class="lbl">Loaves</div></div>
         <div class="hstat"><div class="val" id="stat-reminders">--</div><div class="lbl">Reminders</div></div>
         <div class="hstat"><div class="val" id="stat-breadcrumb">--</div><div class="lbl">Breadcrumb</div></div>
@@ -260,8 +260,8 @@
             <div class="card">
                 <h2>Quick Stats</h2>
                 <div style="font-size:0.85em;display:flex;flex-direction:column;gap:6px;">
-                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Total Tools</span><span style="color:#00ff88;font-weight:600;">~312</span></div>
-                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">MCP Servers</span><span style="color:#00ff88;font-weight:600;">14</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Total Tools</span><span style="color:#00ff88;font-weight:600;">--</span></div>
+                    <div style="display:flex;justify-content:space-between;"><span style="color:#888;">MCP Servers</span><span style="color:#00ff88;font-weight:600;">4</span></div>
                     <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Active Loaves</span><span style="color:#00d9ff;font-weight:600;" id="ov-loaves">--</span></div>
                     <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Pending Reminders</span><span style="color:#00d9ff;font-weight:600;" id="ov-reminders">--</span></div>
                     <div style="display:flex;justify-content:space-between;"><span style="color:#888;">Active Breadcrumb</span><span style="color:#00d9ff;font-weight:600;" id="ov-breadcrumb">--</span></div>
@@ -413,41 +413,27 @@ const API = 'http://localhost:9876';
 const LOCAL_API = 'http://127.0.0.1:8001/api';
 const REMINDER_API = 'http://127.0.0.1:8003/api';
 const BC_API = 'http://127.0.0.1:8002/api';
-// Installer sets this to user's chosen Volumes path
-const VOLUMES_BASE = 'C:/My Drive/Volumes';
-const LOAF_DIR = 'C:\\CPC\\data\\loaves';
+// Override via CPC_VOLUMES_PATH env var; default assumes Google Drive on Windows
+const VOLUMES_BASE = localStorage.getItem('cpc_volumes_path') || 'C:/My Drive/Volumes';
+const LOAF_DIR = localStorage.getItem('cpc_data_path') ? localStorage.getItem('cpc_data_path') + '\\loaves' : 'C:\\CPC\\data\\loaves';
 const GENESIS = new Date('2025-09-24');
 
 const SERVERS = [
-    'atlas', 'utonomous', 'local', 'ops', 'browser', 'programmer',
-    'manager', 'reminder-rs', 'vision', 'voice', 'echo', 'learning', 'learn'
+    'local', 'hands', 'manager', 'workflow'
 ];
 
 const SERVER_TIERS = {
-    'Tier 1 — Core': ['ops'],
-    'Tier 2 — Infrastructure': ['local'],
-    'Tier 3 — Development': ['programmer'],
-    'Knowledge': ['atlas', 'utonomous', 'learning'],
-    'Services': ['reminder-rs', 'voice', 'vision', 'browser'],
-    'Dev Tools': ['manager', 'echo'],
-    'Combined': ['learn']
+    'Execution': ['local'],
+    'Automation': ['hands'],
+    'Delegation': ['manager'],
+    'Workflows': ['workflow']
 };
 
 const SERVER_BINARIES = [
-    { name: 'atlas', bin: 'atlas.exe', src: 'rust-mcp/atlas/' },
-    { name: 'utonomous', bin: 'utonomous.exe', src: 'rust-mcp/utonomous/' },
-    { name: 'local', bin: 'local.exe', src: 'rust-mcp/local/' },
-    { name: 'ops', bin: 'ops.exe', src: 'rust-mcp/ops/' },
-    { name: 'browser', bin: 'browser-mcp.exe', src: 'rust-mcp/browser-mcp/' },
-    { name: 'programmer', bin: 'programmer.exe', src: 'rust-mcp/programmer/' },
-    { name: 'manager', bin: 'manager.exe', src: 'rust-mcp/manager-mcp/' },
-    { name: 'reminder-rs', bin: 'reminder-rs.exe', src: 'rust-mcp/reminder-rs/' },
-    
-    { name: 'vision', bin: 'vision.exe', src: 'rust-mcp/vision/' },
-    { name: 'voice', bin: 'voice.exe', src: 'rust-mcp/voice/' },
-    { name: 'echo', bin: 'echo.exe', src: 'rust-mcp/echo/' },
-    { name: 'learning', bin: 'learning.exe', src: 'rust-mcp/learning-mcp/' },
-    { name: 'learn', bin: 'learn.exe', src: 'rust-mcp/learn/' }
+    { name: 'local', bin: 'local.exe', src: 'local/' },
+    { name: 'hands', bin: 'hands.exe', src: 'hands/' },
+    { name: 'manager', bin: 'manager.exe', src: 'manager/' },
+    { name: 'workflow', bin: 'workflow.exe', src: 'workflow/' }
 ];
 
 const CATALOG_TOPICS = {
@@ -482,7 +468,7 @@ const SKILLS = [
     { name: 'cpc-operations', desc: 'Day-to-day operational procedures and maintenance tasks' },
     { name: 'cpc-router', desc: 'Master index routing to correct skill for any given task' },
     { name: 'cpc-sidecar-maintenance', desc: 'Maintenance procedures for sidecar processes and services' },
-    { name: 'cpc-tool-routing', desc: 'Which of the ~312 tools to use for any given task' },
+    { name: 'cpc-tool-routing', desc: 'Which tool to use for any given task' },
     { name: 'cpc-trading', desc: 'Stock analysis, Focus 12, technical indicators, TradeStation' },
     { name: 'cpc-volumes-maintenance', desc: 'Consolidation, dedup, stale detection, knowledge hygiene' },
 ];
@@ -628,8 +614,7 @@ async function checkServerStatus() {
 
     // Fallback: probe individual HTTP endpoints
     const probes = [
-        { url: REMINDER_API + '/reminders', servers: ['reminder-rs'] },
-        { url: BC_API + '/breadcrumb/status', servers: ['atlas', 'utonomous'] }
+        { url: BC_API + '/breadcrumb/status', servers: ['local'] }
     ];
     await Promise.all(probes.map(async (probe) => {
         try {
@@ -722,7 +707,7 @@ async function loadOverviewStats() {
 function loadServers() {
     const el = document.getElementById('servers-content');
     let html = '<div style="padding:8px 12px;margin-bottom:10px;background:rgba(0,217,255,0.06);border:1px solid rgba(0,217,255,0.15);border-radius:6px;font-size:0.8em;color:#8af;">' +
-        '&#128193; Source: <span style="color:#00ff88;font-family:monospace;">C:\\rust-mcp</span> &mdash; All servers are Rust MCP binaries' +
+        '&#128193; All servers are Rust MCP binaries' +
         '</div>';
 
     for (const [tierName, srvList] of Object.entries(SERVER_TIERS)) {
@@ -736,7 +721,7 @@ function loadServers() {
                 '<div class="srv-name"><span class="dot ' + (up ? 'up' : (up === false ? 'down' : '')) + '" style="' + (up === null ? 'background:#555;' : '') + '"></span>' + info.name + '</div>' +
                 '<div class="srv-meta">Binary: ' + info.bin + '</div>' +
                 (info.src ? '<div class="srv-meta" style="color:#00d9ff;">Source: ' + info.src + '</div>' : '') +
-                '<div class="srv-meta">Path: C:\\CPC\\servers\\' + info.bin + '</div>' +
+                '<div class="srv-meta">Path: servers/' + info.bin + '</div>' +
                 '<div class="srv-status">' + statusBadge + '</div>' +
                 '</div>';
         }
@@ -913,7 +898,7 @@ async function loadBuilds() {
         const up = serverStatus[srv.name];
         const statusBadge = up === true ? '<span class="badge up">Running</span>' : '<span class="badge down">Stopped</span>';
         rows += '<tr><td style="font-weight:600;">' + srv.name + '</td><td style="color:#00d9ff;font-family:Consolas,monospace;">' + srv.bin + '</td>' +
-            '<td style="color:#666;font-size:0.85em;">C:\\CPC\\servers\\' + srv.bin + '</td><td>' + statusBadge + '</td></tr>';
+            '<td style="color:#666;font-size:0.85em;">servers/' + srv.bin + '</td><td>' + statusBadge + '</td></tr>';
     }
     tbody.innerHTML = rows;
 
