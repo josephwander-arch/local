@@ -4,7 +4,7 @@ Thank you for your interest in contributing.
 
 ## Reporting Issues
 
-Open an issue at [github.com/josephwander-arch/local-mcp/issues](https://github.com/josephwander-arch/local-mcp/issues).
+Open an issue at [github.com/josephwander-arch/local/issues](https://github.com/josephwander-arch/local/issues).
 
 Include:
 - Windows version and architecture (x64 / ARM64)

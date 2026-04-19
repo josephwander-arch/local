@@ -43,9 +43,9 @@ The output binary lands at `target/release/local.exe`. It is a single file with 
 
 ### Pre-built binaries
 
-Download the latest Windows binaries from the [v1.2.1 release](https://github.com/josephwander-arch/local/releases/tag/v1.2.1):
-- `local_v1.2.1_x64.exe` --- Windows x64
-- `local_v1.2.1_arm64.exe` --- Windows ARM64
+Download the latest Windows binaries from the [latest release](https://github.com/josephwander-arch/local/releases/latest):
+- `local-v1.2.13-x64.exe` --- Windows x64
+- `local-v1.2.13-aarch64.exe` --- Windows ARM64
 
 ### Configure for Claude Desktop
 
