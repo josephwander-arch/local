@@ -414,8 +414,10 @@ const LOCAL_API = 'http://127.0.0.1:8001/api';
 const REMINDER_API = 'http://127.0.0.1:8003/api';
 const BC_API = 'http://127.0.0.1:8002/api';
 // Override via CPC_VOLUMES_PATH env var; default assumes Google Drive on Windows
-const VOLUMES_BASE = localStorage.getItem('cpc_volumes_path') || 'C:/My Drive/Volumes';
-const LOAF_DIR = localStorage.getItem('cpc_data_path') ? localStorage.getItem('cpc_data_path') + '\\loaves' : 'C:\\CPC\\data\\loaves';
+const VOLUMES_BASE = localStorage.getItem('cpc_volumes_path') || '';
+    const LOAF_DIR = localStorage.getItem('cpc_data_path') ? localStorage.getItem('cpc_data_path') + '\\loaves' : '';
+    const BACKUPS_DIR = localStorage.getItem('cpc_data_path') ? localStorage.getItem('cpc_data_path').replace(/\\data$/,'') + '\\backups' : '';
+    const DEAD_DROP_FILE = localStorage.getItem('cpc_data_path') ? localStorage.getItem('cpc_data_path') + '\\dead_drop.json' : '';
 const GENESIS = new Date('2025-09-24');
 
 const SERVERS = [
@@ -680,7 +682,7 @@ async function loadOverviewStats() {
 
     // Loaves count
     try {
-        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent('C:\\CPC\\data\\loaves'));
+        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent(LOAF_DIR));
         if (res) {
             const files = await res.json();
             const jsonFiles = (Array.isArray(files) ? files : []).filter(f => f.name && f.name.endsWith('.json'));
@@ -894,7 +896,7 @@ async function loadBuilds() {
     // Build history from backups
     const histEl = document.getElementById('builds-history');
     try {
-        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent('C:\\CPC\\backups'));
+        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent(BACKUPS_DIR));
         if (res) {
             const files = await res.json();
             const exeFiles = (Array.isArray(files) ? files : [])
@@ -1074,7 +1076,7 @@ async function loadDeadDrop() {
     const el = document.getElementById('dd-messages');
 
     try {
-        const res = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent('C:\\CPC\\data\\dead_drop.json'));
+        const res = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent(DEAD_DROP_FILE));
         if (res) {
             ddData = await res.json();
             if (!Array.isArray(ddData)) ddData = ddData.messages || [];
@@ -1152,7 +1154,7 @@ function clearAllDD() {
 }
 
 async function saveDeadDrop() {
-    await safeFetch(LOCAL_API + '/files/write?path=' + encodeURIComponent('C:\\CPC\\data\\dead_drop.json'), {
+    await safeFetch(LOCAL_API + '/files/write?path=' + encodeURIComponent(DEAD_DROP_FILE), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(ddData)
@@ -1167,7 +1169,7 @@ async function loadLoaves() {
     const archivedEl = document.getElementById('loaf-archived');
 
     try {
-        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent('C:\\CPC\\data\\loaves'));
+        const res = await safeFetch(LOCAL_API + '/files?path=' + encodeURIComponent(LOAF_DIR));
         if (!res) throw new Error('offline');
 
         const files = await res.json();
@@ -1181,7 +1183,7 @@ async function loadLoaves() {
         const loaves = [];
         for (const f of jsonFiles) {
             try {
-                const r2 = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent('C:\\CPC\\data\\loaves\\' + f.name));
+                const r2 = await safeFetch(LOCAL_API + '/files/read?path=' + encodeURIComponent(LOAF_DIR + '\\' + f.name));
                 if (r2) {
                     const loaf = await r2.json();
                     loaf._filename = f.name;
