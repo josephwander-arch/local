@@ -436,18 +436,7 @@ const SERVER_BINARIES = [
     { name: 'workflow', bin: 'workflow.exe', src: 'workflow/' }
 ];
 
-const CATALOG_TOPICS = {
-  'architecture': { keywords: ['architecture','services','filesystem'], purpose: 'System architecture and service layout', files: ['architecture.md','services.md'] },
-  'boot': { keywords: ['boot','startup','platform'], purpose: 'Boot procedures and platform detection', files: ['boot.md','platform.md'] },
-  'builds': { keywords: ['build','deploy','manifest'], purpose: 'Build system and manifests', files: ['builds.md','roadmap.md'] },
-  'skills': { keywords: ['skill','procedure','config'], purpose: 'Hot-swappable behavioral config files', files: ['skills.md','status.md'] },
-  'extraction': { keywords: ['extraction','insight','capture'], purpose: 'Insight capture rules and protocols', files: ['extraction.md','reference.md'] },
-  'patterns': { keywords: ['pattern','debug','correction'], purpose: 'Debugging rules and learned patterns', files: ['patterns.md'] },
-  'coordination': { keywords: ['multi-ai','coordination','delegation'], purpose: 'Cross-AI workflows and delegation', files: ['coordination.md'] },
-  'tools': { keywords: ['tool','routing','selection'], purpose: 'Tool routing and selection patterns', files: ['tools.md','routing.md'] },
-  'errors': { keywords: ['error','diagnostic','recovery'], purpose: 'Error patterns and recovery', files: ['errors.md'] },
-  'sessions': { keywords: ['session','handoff','continuity'], purpose: 'Session continuity and handoffs', files: ['sessions.md'] },
-};
+const CATALOG_TOPICS = {};
 
 const CATALOG_CATEGORIES = {
   '\u{1F4D6} QUICK REFERENCE': ['CATALOG.md', 'ROADMAP.md', 'CHANGELOG.md'],
