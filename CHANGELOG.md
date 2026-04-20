@@ -4,11 +4,24 @@ All notable changes to the local MCP server are documented here.
 
 ## [Unreleased]
 
-### Added
+## [1.2.15] - 2026-04-20
 
-- **GitHub Actions release workflow** — `v*` tag push builds x64 (windows-latest) + ARM64 (windows-11-arm native) binaries, attaches to draft release as `local-vX.Y.Z-x64.exe` / `local-vX.Y.Z-aarch64.exe`.
+### Fixed
+
+- **Portability fix** — all 6 source files with hardcoded `C:\My Drive\Volumes` paths now use `cpc_paths::volumes_path()` with fallback. Any user whose Google Drive mounts at a non-default path gets correct resolution instead of broken functionality.
+
+### Changed
+
+- **CATALOG_TOPICS stripped from dashboard.html** — removed internal knowledge-routing metadata from public HTML.
+- **GitHub Actions release workflow** — `v*` tag push builds x64 + ARM64 binaries, attaches to draft release.
 - **SECURITY.md** — security policy and reporting instructions.
 - **Platform-split install docs** — README install section split into self-contained Windows x64 and ARM64 sub-sections.
+
+## [1.2.14] - 2026-04-19
+
+### Added
+
+- **ARM64 standalone installer** (`install-local-arm64.exe`) + matching x64 installer (`install-local-x64.exe`). No new server functionality.
 
 ## [1.2.13] - 2026-04-17
 

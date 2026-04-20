@@ -4,20 +4,21 @@
 
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
-Version 1.2.13 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
+Version 1.2.14 · Apache 2.0 · [GitHub](https://github.com/josephwander-arch/local)
 
 **Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) · [hands](https://github.com/josephwander-arch/hands) · [workflow](https://github.com/josephwander-arch/workflow) · [cpc-paths](https://github.com/josephwander-arch/cpc-paths) · [cpc-breadcrumbs](https://github.com/josephwander-arch/cpc-breadcrumbs)
 
 ---
 
-## What's New in v1.2.13: Clippy Cleanup + Async Deadlock Fix
+## What's New in v1.2.14: ARM64 Standalone Installer
 
-v1.2.13 fixes a 4-minute MCP deadlock on long-running powershell child processes (sync `std::process` replaced with `spawn` + background reader thread + `recv_timeout`) and removes blanket clippy suppressions in favor of targeted lint fixes.
+v1.2.14 ships the first ARM64 standalone installer (`install-local-arm64.exe`) alongside a matching x64 installer (`install-local-x64.exe`).
 
 ### Highlights since v1.1.1
 
 | Version | Headline |
 |---------|----------|
+| v1.2.14 | ARM64 standalone installer + x64 installer |
 | v1.2.13 | Async powershell deadlock fix, clippy cleanup |
 | v1.2.12 | 5 new git tools: `git_clone`, `git_pull`, `git_push`, `git_remote`, `git_diff_summary` |
 | v1.2.11 | First standalone public build — git deps, Cargo.lock, mojibake cleanup |
@@ -159,7 +160,7 @@ crashes — local is the server.
 
 ### Windows x64
 
-1. Download `local-v1.2.13-x64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
+1. Download `local-v1.2.14-x64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
 2. Rename to `local.exe` and place in `%LOCALAPPDATA%\CPC\servers\`.
 3. Add to your `claude_desktop_config.json`:
    ```json
@@ -177,7 +178,7 @@ crashes — local is the server.
 
 ### Windows ARM64
 
-1. Download `local-v1.2.13-aarch64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
+1. Download `local-v1.2.14-aarch64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
 2. Rename to `local.exe` and place in `%LOCALAPPDATA%\CPC\servers\`.
 3. Add to your `claude_desktop_config.json`:
    ```json
