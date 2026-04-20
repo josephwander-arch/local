@@ -3,9 +3,15 @@
 // NAV: TOC at line 175 | 4 fn | 0 struct | 2026-02-03
 
 use serde_json::{json, Value};
+use std::path::PathBuf;
 use std::process::Command;
 
-const SCRIPTS_DIR: &str = "C:\\My Drive\\scripts";
+fn scripts_dir() -> PathBuf {
+    cpc_paths::volumes_path()
+        .ok()
+        .and_then(|v| v.parent().map(|p| p.join("scripts")))
+        .unwrap_or_else(|| PathBuf::from(r"C:\My Drive\scripts"))
+}
 
 /// Run a PowerShell script and capture output
 fn run_ps_script(script_path: &str) -> Result<String, String> {
@@ -30,7 +36,7 @@ fn run_ps_script(script_path: &str) -> Result<String, String> {
 
 /// Run md2docx.bat with input and output paths
 fn run_md2docx(input: &str, output: &str) -> Result<String, String> {
-    let bat_path = format!("{}\\md2docx.bat", SCRIPTS_DIR);
+    let bat_path = scripts_dir().join("md2docx.bat").display().to_string();
 
     // Check input exists
     if !std::path::Path::new(input).exists() {
@@ -116,7 +122,7 @@ pub fn get_definitions() -> Vec<Value> {
 pub fn execute(name: &str, args: &Value) -> Value {
     match name {
         "config_backup" | "util_backup_config" => {
-            let script = format!("{}\\backup_config.ps1", SCRIPTS_DIR);
+            let script = scripts_dir().join("backup_config.ps1").display().to_string();
             match run_ps_script(&script) {
                 Ok(output) => json!({
                     "success": true,
@@ -129,7 +135,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
             }
         }
         "config_backup_operating" | "util_backup_operating" => {
-            let script = format!("{}\\backup_operating.ps1", SCRIPTS_DIR);
+            let script = scripts_dir().join("backup_operating.ps1").display().to_string();
             match run_ps_script(&script) {
                 Ok(output) => json!({
                     "success": true,
@@ -142,7 +148,7 @@ pub fn execute(name: &str, args: &Value) -> Value {
             }
         }
         "config_validate" | "util_validate_config" => {
-            let script = format!("{}\\validate_config.ps1", SCRIPTS_DIR);
+            let script = scripts_dir().join("validate_config.ps1").display().to_string();
             match run_ps_script(&script) {
                 Ok(output) => json!({
                     "success": true,

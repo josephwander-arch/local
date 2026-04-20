@@ -9,9 +9,19 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::path::PathBuf;
 
-const FALLBACKS_PATH: &str = r"C:\My Drive\Volumes\logs\error_fallbacks.json";
-const ERROR_LOG_PATH: &str = r"C:\My Drive\Volumes\logs\error_patterns.jsonl";
+fn fallbacks_path() -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("logs").join("error_fallbacks.json"))
+        .unwrap_or_else(|_| PathBuf::from(r"C:\My Drive\Volumes\logs\error_fallbacks.json"))
+}
+
+fn error_log_path() -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("logs").join("error_patterns.jsonl"))
+        .unwrap_or_else(|_| PathBuf::from(r"C:\My Drive\Volumes\logs\error_patterns.jsonl"))
+}
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 struct ErrorPattern {
@@ -23,7 +33,7 @@ struct ErrorPattern {
 }
 
 fn load_fallbacks() -> HashMap<String, ErrorPattern> {
-    if let Ok(content) = fs::read_to_string(FALLBACKS_PATH) {
+    if let Ok(content) = fs::read_to_string(fallbacks_path()) {
         if let Ok(patterns) = serde_json::from_str(&content) {
             return patterns;
         }
@@ -65,7 +75,7 @@ fn load_fallbacks() -> HashMap<String, ErrorPattern> {
 
 fn save_fallbacks(patterns: &HashMap<String, ErrorPattern>) {
     if let Ok(content) = serde_json::to_string_pretty(&patterns) {
-        let _ = fs::write(FALLBACKS_PATH, content);
+        let _ = fs::write(fallbacks_path(), content);
     }
 }
 
@@ -80,7 +90,7 @@ fn log_error_attempt(tool: &str, error: &str, fallback: Option<&str>, success: O
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(ERROR_LOG_PATH)
+        .open(error_log_path())
     {
         let _ = writeln!(file, "{}", entry);
     }

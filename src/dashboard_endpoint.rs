@@ -8,6 +8,7 @@
 //! Graceful: if all ports fail, logs a warning and returns — MCP continues normally.
 
 use serde_json::{json, Value};
+use std::path::PathBuf;
 use std::thread;
 
 const DEFAULT_PORT: u16 = 9101;
@@ -186,9 +187,20 @@ fn list_old_binaries(dir: &str) -> Vec<String> {
         .unwrap_or_default()
 }
 
+fn breadcrumb_archive_dir(date: &str) -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("breadcrumbs").join("completed").join(date))
+        .unwrap_or_else(|_| {
+            PathBuf::from(format!(
+                r"C:\My Drive\Volumes\breadcrumbs\completed\{}",
+                date
+            ))
+        })
+}
+
 fn count_archive_today() -> usize {
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let dir = format!(r"C:\My Drive\Volumes\breadcrumbs\completed\{}", today);
+    let dir = breadcrumb_archive_dir(&today);
     std::fs::read_dir(&dir)
         .map(|entries| entries.filter_map(|e| e.ok()).count())
         .unwrap_or(0)

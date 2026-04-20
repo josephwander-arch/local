@@ -4,10 +4,27 @@
 use chrono;
 use cpc_breadcrumbs;
 use serde_json::{json, Value};
+use std::path::PathBuf;
 use std::process::Command;
 
-const FALLBACK_MAP_PATH: &str =
-    "C:\\My Drive\\Volumes\\system_architecture\\tool_fallback_map.json";
+fn fallback_map_path() -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("system_architecture").join("tool_fallback_map.json"))
+        .unwrap_or_else(|_| {
+            PathBuf::from(r"C:\My Drive\Volumes\system_architecture\tool_fallback_map.json")
+        })
+}
+
+fn breadcrumb_archive_dir(date: &str) -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("breadcrumbs").join("completed").join(date))
+        .unwrap_or_else(|_| {
+            PathBuf::from(format!(
+                r"C:\My Drive\Volumes\breadcrumbs\completed\{}",
+                date
+            ))
+        })
+}
 
 // ── local_health helpers ───────────────────────────────────────────────────────
 
@@ -21,7 +38,7 @@ fn count_active_breadcrumbs() -> usize {
 /// Count archived breadcrumbs completed today.
 fn count_archive_today() -> usize {
     let today = chrono::Local::now().format("%Y-%m-%d").to_string();
-    let dir = format!(r"C:\My Drive\Volumes\breadcrumbs\completed\{}", today);
+    let dir = breadcrumb_archive_dir(&today);
     std::fs::read_dir(&dir)
         .map(|entries| entries.filter_map(|e| e.ok()).count())
         .unwrap_or(0)
@@ -66,7 +83,7 @@ fn is_process_running(name: &str) -> bool {
 
 /// Load the fallback map JSON
 fn load_fallback_map() -> Result<Value, String> {
-    let content = std::fs::read_to_string(FALLBACK_MAP_PATH)
+    let content = std::fs::read_to_string(fallback_map_path())
         .map_err(|e| format!("Cannot read fallback map: {}", e))?;
     serde_json::from_str(&content).map_err(|e| format!("Invalid JSON in fallback map: {}", e))
 }

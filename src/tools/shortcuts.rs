@@ -4,6 +4,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::fs;
+use std::path::PathBuf;
 
 /// Shortcut definitions - name, commands, description
 const SHORTCUTS: &[(&str, &[&str], &str)] = &[
@@ -48,11 +49,15 @@ struct CustomShortcutsConfig {
 }
 
 /// Path to custom shortcuts JSON
-const CUSTOM_SHORTCUTS_PATH: &str = "C:\\My Drive\\Volumes\\config\\custom_shortcuts.json";
+fn custom_shortcuts_path() -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("config").join("custom_shortcuts.json"))
+        .unwrap_or_else(|_| PathBuf::from(r"C:\My Drive\Volumes\config\custom_shortcuts.json"))
+}
 
 /// Load custom shortcuts from JSON file
 fn load_custom_shortcuts() -> Vec<CustomShortcut> {
-    match fs::read_to_string(CUSTOM_SHORTCUTS_PATH) {
+    match fs::read_to_string(custom_shortcuts_path()) {
         Ok(content) => match serde_json::from_str::<CustomShortcutsConfig>(&content) {
             Ok(config) => config.shortcuts,
             Err(e) => {
@@ -156,7 +161,7 @@ pub fn execute(name: &str, args: &Value, session_executor: fn(&str, &Value) -> V
                 "count": shortcuts.len(),
                 "builtin_count": SHORTCUTS.len(),
                 "custom_count": custom.len(),
-                "custom_config": CUSTOM_SHORTCUTS_PATH
+                "custom_config": custom_shortcuts_path().display().to_string()
             })
         }
 

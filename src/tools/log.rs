@@ -1,18 +1,23 @@
 //! Terminal execution logging
-//! Logs all command executions to C:\My Drive\Volumes\logs\terminal_log.jsonl
+//! Logs all command executions to Volumes/logs/terminal_log.jsonl
 
 use chrono::Local;
 use serde_json::{json, Value};
 use std::fs::{create_dir_all, OpenOptions};
 use std::io::Write;
-use std::path::Path;
+use std::path::PathBuf;
 
-const LOG_PATH: &str = r"C:\My Drive\Volumes\logs\terminal_log.jsonl";
+fn log_path() -> PathBuf {
+    cpc_paths::volumes_path()
+        .map(|v| v.join("logs").join("terminal_log.jsonl"))
+        .unwrap_or_else(|_| PathBuf::from(r"C:\My Drive\Volumes\logs\terminal_log.jsonl"))
+}
 
 /// Log a command execution
 pub fn log_execution(tool: &str, command: &str, stdout: &str, stderr: &str, success: bool) {
     // Ensure log directory exists
-    if let Some(parent) = Path::new(LOG_PATH).parent() {
+    let path = log_path();
+    if let Some(parent) = path.parent() {
         let _ = create_dir_all(parent);
     }
 
@@ -26,7 +31,7 @@ pub fn log_execution(tool: &str, command: &str, stdout: &str, stderr: &str, succ
     });
 
     // Append to log file
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(LOG_PATH) {
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&path) {
         let _ = writeln!(file, "{}", entry);
     }
 }
@@ -43,7 +48,7 @@ fn truncate_for_log(s: &str, max_len: usize) -> &str {
 /// Get recent log entries
 #[allow(dead_code)] // Utility for future log browsing tool
 pub fn get_recent_logs(count: usize) -> Value {
-    match std::fs::read_to_string(LOG_PATH) {
+    match std::fs::read_to_string(log_path()) {
         Ok(content) => {
             let lines: Vec<&str> = content.lines().rev().take(count).collect();
             let entries: Vec<Value> = lines
