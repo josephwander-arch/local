@@ -376,7 +376,11 @@ mod tests {
         let result = local_health();
 
         assert_eq!(result["server"], "local", "server field must be 'local'");
-        assert_eq!(result["version"], env!("CARGO_PKG_VERSION"), "version must track Cargo.toml");
+        assert_eq!(
+            result["version"],
+            env!("CARGO_PKG_VERSION"),
+            "version must track Cargo.toml"
+        );
         assert!(result.get("paths").is_some(), "paths field must be present");
         assert!(
             result.get("breadcrumbs").is_some(),

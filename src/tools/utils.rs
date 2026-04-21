@@ -122,7 +122,10 @@ pub fn get_definitions() -> Vec<Value> {
 pub fn execute(name: &str, args: &Value) -> Value {
     match name {
         "config_backup" | "util_backup_config" => {
-            let script = scripts_dir().join("backup_config.ps1").display().to_string();
+            let script = scripts_dir()
+                .join("backup_config.ps1")
+                .display()
+                .to_string();
             match run_ps_script(&script) {
                 Ok(output) => json!({
                     "success": true,
@@ -135,7 +138,10 @@ pub fn execute(name: &str, args: &Value) -> Value {
             }
         }
         "config_backup_operating" | "util_backup_operating" => {
-            let script = scripts_dir().join("backup_operating.ps1").display().to_string();
+            let script = scripts_dir()
+                .join("backup_operating.ps1")
+                .display()
+                .to_string();
             match run_ps_script(&script) {
                 Ok(output) => json!({
                     "success": true,
@@ -148,7 +154,10 @@ pub fn execute(name: &str, args: &Value) -> Value {
             }
         }
         "config_validate" | "util_validate_config" => {
-            let script = scripts_dir().join("validate_config.ps1").display().to_string();
+            let script = scripts_dir()
+                .join("validate_config.ps1")
+                .display()
+                .to_string();
             match run_ps_script(&script) {
                 Ok(output) => json!({
                     "success": true,
