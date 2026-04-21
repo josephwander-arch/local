@@ -6,7 +6,7 @@
 
 Version 1.2.15 Â· Apache 2.0 Â· [GitHub](https://github.com/josephwander-arch/local)
 
-**Part of [CPC](https://github.com/josephwander-arch) (Cognitive Performance Computing)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) Â· [hands](https://github.com/josephwander-arch/hands) Â· [workflow](https://github.com/josephwander-arch/workflow) Â· [cpc-paths](https://github.com/josephwander-arch/cpc-paths) Â· [cpc-breadcrumbs](https://github.com/josephwander-arch/cpc-breadcrumbs)
+**Part of [CPC](https://github.com/josephwander-arch) (Copy Paste Compute)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) Â· [hands](https://github.com/josephwander-arch/hands) Â· [workflow](https://github.com/josephwander-arch/workflow) Â· [cpc-paths](https://github.com/josephwander-arch/cpc-paths) Â· [cpc-breadcrumbs](https://github.com/josephwander-arch/cpc-breadcrumbs)
 
 ---
 
