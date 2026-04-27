@@ -5,7 +5,7 @@ edition = "2021"
 description = "Windows MCP - Raw tools + Windows automation for Claude Desktop"
 license = "Apache-2.0"
 readme = "README.md"
-repository = "https://github.com/josephwander-arch/local"
+repository = "https://github.com/AIWander/local"
 keywords = ["cpc", "mcp", "windows", "filesystem", "shell"]
 categories = ["command-line-utilities", "filesystem", "development-tools"]
 
@@ -21,8 +21,8 @@ once_cell = "1.19"  # lazy static for session storage
 uuid = { version = "1.6", features = ["v4"] }  # for unique markers in persistent sessions
 base64 = "0.21"  # for transform_base64_* tools
 rusqlite = { version = "0.29", features = ["bundled"] }
-cpc-breadcrumbs = { git = "https://github.com/josephwander-arch/cpc-breadcrumbs", tag = "v0.3.0" }
-cpc-paths = { git = "https://github.com/josephwander-arch/cpc-paths", tag = "v0.1.1" }
+cpc-breadcrumbs = { git = "https://github.com/AIWander/cpc-breadcrumbs", tag = "v0.3.0" }
+cpc-paths = { git = "https://github.com/AIWander/cpc-paths", tag = "v0.1.1" }
 tiny_http = "0.12"
 
 [target.'cfg(windows)'.dependencies]

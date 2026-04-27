@@ -12,4 +12,4 @@ chrono = { version = "0.4", features = ["serde"] }
 thiserror = "1"
 fs2 = "0.4"
 hostname = "0.4"
-cpc-paths = { git = "https://github.com/josephwander-arch/cpc-paths", tag = "v0.1.1" }
+cpc-paths = { git = "https://github.com/AIWander/cpc-paths", tag = "v0.1.1" }

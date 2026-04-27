@@ -41,7 +41,7 @@ All notable changes to the local MCP server are documented here.
 ## [1.2.11] - 2026-04-16
 
 ### Changed
-- Swapped `cpc-breadcrumbs` from path dep to git tag pin (`josephwander-arch/cpc-breadcrumbs @ v0.1.0`) — unblocks standalone clone build (was CRITICAL-2 in pre-Stage-F audit)
+- Swapped `cpc-breadcrumbs` from path dep to git tag pin (`AIWander/cpc-breadcrumbs @ v0.1.0`) — unblocks standalone clone build (was CRITICAL-2 in pre-Stage-F audit)
 - Added `license = "Apache-2.0"` + `repository` + `description` to Cargo.toml
 - Committed Cargo.lock for reproducible CI builds (was CRITICAL-3 in audit)
 

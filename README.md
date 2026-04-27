@@ -1,12 +1,12 @@
 ﻿# local MCP Server
 
-[![CI](https://github.com/josephwander-arch/local/actions/workflows/ci.yml/badge.svg)](https://github.com/josephwander-arch/local/actions/workflows/ci.yml)
+[![CI](https://github.com/AIWander/local/actions/workflows/ci.yml/badge.svg)](https://github.com/AIWander/local/actions/workflows/ci.yml)
 
 **Windows-native MCP server for shell execution, file operations, persistent sessions, transforms, and operation tracking.**
 
-Version 1.2.15 Â· Apache 2.0 Â· [GitHub](https://github.com/josephwander-arch/local)
+Version 1.2.15 Â· Apache 2.0 Â· [GitHub](https://github.com/AIWander/local)
 
-**Part of [CPC](https://github.com/josephwander-arch) (Copy Paste Compute)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/josephwander-arch/manager) Â· [hands](https://github.com/josephwander-arch/hands) Â· [workflow](https://github.com/josephwander-arch/workflow) Â· [cpc-paths](https://github.com/josephwander-arch/cpc-paths) Â· [cpc-breadcrumbs](https://github.com/josephwander-arch/cpc-breadcrumbs)
+**Part of [CPC](https://github.com/AIWander) (Copy Paste Compute)** — a multi-agent AI orchestration platform. Related repos: [manager](https://github.com/AIWander/manager) Â· [hands](https://github.com/AIWander/hands) Â· [workflow](https://github.com/AIWander/workflow) Â· [cpc-paths](https://github.com/AIWander/cpc-paths) Â· [cpc-breadcrumbs](https://github.com/AIWander/cpc-breadcrumbs)
 
 ---
 
@@ -161,7 +161,7 @@ crashes — local is the server.
 
 ### Windows x64
 
-1. Download `local-v1.2.15-x64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
+1. Download `local-v1.2.15-x64.exe` from the [latest release](https://github.com/AIWander/local/releases/latest).
 2. Rename to `local.exe` and place in `%LOCALAPPDATA%\CPC\servers\`.
 3. Add to your `claude_desktop_config.json`:
    ```json
@@ -179,7 +179,7 @@ crashes — local is the server.
 
 ### Windows ARM64
 
-1. Download `local-v1.2.15-aarch64.exe` from the [latest release](https://github.com/josephwander-arch/local/releases/latest).
+1. Download `local-v1.2.15-aarch64.exe` from the [latest release](https://github.com/AIWander/local/releases/latest).
 2. Rename to `local.exe` and place in `%LOCALAPPDATA%\CPC\servers\`.
 3. Add to your `claude_desktop_config.json`:
    ```json
@@ -206,7 +206,7 @@ For full per-machine setup (paths, breadcrumb config, git requirements), see [`d
 ### Build from Source
 
 ```bash
-git clone https://github.com/josephwander-arch/local.git
+git clone https://github.com/AIWander/local.git
 cd local
 cargo build --release
 ```
@@ -285,9 +285,9 @@ activity log in real time.
 
 `local` is designed to work standalone — one binary, pointed at by one MCP client, and you have shell + filesystem + breadcrumbs. Pair it with other CPC servers when you want broader capabilities.
 
-- Pair with [manager](https://github.com/josephwander-arch/manager) when you want multi-backend orchestration on top of local's execution tools.
-- Pair with [hands](https://github.com/josephwander-arch/hands) when a script needs to reach into a browser or Windows UI layer.
-- Pair with [workflow](https://github.com/josephwander-arch/workflow) when scripts call APIs you've graduated from browser discovery to stored HTTP patterns.
+- Pair with [manager](https://github.com/AIWander/manager) when you want multi-backend orchestration on top of local's execution tools.
+- Pair with [hands](https://github.com/AIWander/hands) when a script needs to reach into a browser or Windows UI layer.
+- Pair with [workflow](https://github.com/AIWander/workflow) when scripts call APIs you've graduated from browser discovery to stored HTTP patterns.
 
 Host clients: Claude Desktop (add to `claude_desktop_config.json`; see `claude_desktop_config.example.json`), Claude Code (`~/.claude/mcp.json`), OpenAI Codex CLI, or Gemini CLI. If your client supports Anthropic skill files, you can load `skills/local.md` directly for skill-only (no-server) mode — useful when you want the behavioral guidance without booting the binary.
 
@@ -299,7 +299,7 @@ Toggle **tools always loaded** in Claude's tool settings (Claude Desktop: Settin
 
 Since `local` ships `http_download`, `write_file`, and shell execution, it's a natural installer for its siblings. Ask Claude:
 
-> `Install hands, manager, and workflow from github.com/josephwander-arch/ and register them in my Claude Desktop config.`
+> `Install hands, manager, and workflow from github.com/AIWander/ and register them in my Claude Desktop config.`
 
 Claude uses `http_download` to pull each release binary, places them alongside `local.exe`, edits `claude_desktop_config.json`, and verifies each starts. One manual `local` install, three automated follow-ups.
 
@@ -327,6 +327,6 @@ Copyright 2026 Joseph Wander.
 
 ## Contact
 
-- **GitHub:** [github.com/josephwander-arch](https://github.com/josephwander-arch/)
+- **GitHub:** [github.com/AIWander](https://github.com/AIWander/)
 - **Email:** josephwander@gmail.com
-- **Issues:** [github.com/josephwander-arch/local/issues](https://github.com/josephwander-arch/local/issues)
+- **Issues:** [github.com/AIWander/local/issues](https://github.com/AIWander/local/issues)

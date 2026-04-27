@@ -4,7 +4,7 @@ Thank you for your interest in contributing.
 
 ## Reporting Issues
 
-Open an issue at [github.com/josephwander-arch/local/issues](https://github.com/josephwander-arch/local/issues).
+Open an issue at [github.com/AIWander/local/issues](https://github.com/AIWander/local/issues).
 
 Include:
 - Windows version and architecture (x64 / ARM64)

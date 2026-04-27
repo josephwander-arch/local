@@ -34,7 +34,7 @@ Local is a Rust MCP server that provides 105 tools for Windows filesystem operat
 ### Build from source
 
 ```bash
-git clone https://github.com/josephwander-arch/local.git
+git clone https://github.com/AIWander/local.git
 cd local
 cargo build --release -p local
 ```
@@ -43,7 +43,7 @@ The output binary lands at `target/release/local.exe`. It is a single file with 
 
 ### Pre-built binaries
 
-Download the latest Windows binaries from the [latest release](https://github.com/josephwander-arch/local/releases/latest):
+Download the latest Windows binaries from the [latest release](https://github.com/AIWander/local/releases/latest):
 - `local-v1.2.13-x64.exe` --- Windows x64
 - `local-v1.2.13-aarch64.exe` --- Windows ARM64
 
@@ -280,7 +280,7 @@ Persistent PowerShell sessions for multi-step Windows automation. Unlike the one
 
 ## Further Reading
 
-- [GitHub repository](https://github.com/josephwander-arch/local) --- source code, issues, and releases
+- [GitHub repository](https://github.com/AIWander/local) --- source code, issues, and releases
 - [Model Context Protocol specification](https://modelcontextprotocol.io/) --- the protocol Local implements
 - [Claude Desktop MCP setup](https://docs.anthropic.com/en/docs/claude-desktop/mcp) --- general MCP server configuration
 - [Claude Code MCP setup](https://docs.anthropic.com/en/docs/claude-code/mcp) --- adding MCP servers to Claude Code
