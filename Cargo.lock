@@ -198,7 +198,7 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 [[package]]
 name = "cpc-breadcrumbs"
 version = "0.3.0"
-source = "git+https://github.com/josephwander-arch/cpc-breadcrumbs?tag=v0.3.0#30b6522213bb2cf09da6c0ff25bffef3334d6b68"
+source = "git+https://github.com/AIWander/cpc-breadcrumbs?tag=v0.3.0#30b6522213bb2cf09da6c0ff25bffef3334d6b68"
 dependencies = [
  "anyhow",
  "chrono",
@@ -226,7 +226,7 @@ dependencies = [
 [[package]]
 name = "cpc-paths"
 version = "0.1.1"
-source = "git+https://github.com/josephwander-arch/cpc-paths?tag=v0.1.1#64599715ec2a21bd3a02f2deb7b6b848d7a4a477"
+source = "git+https://github.com/AIWander/cpc-paths?tag=v0.1.1#64599715ec2a21bd3a02f2deb7b6b848d7a4a477"
 dependencies = [
  "anyhow",
  "chrono",
@@ -902,7 +902,7 @@ dependencies = [
  "tiny_http",
  "tokio",
  "uuid",
- "winreg 0.52.0",
+ "winreg 0.56.0",
 ]
 
 [[package]]
@@ -2266,12 +2266,12 @@ dependencies = [
 
 [[package]]
 name = "winreg"
-version = "0.52.0"
+version = "0.56.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a277a57398d4bfa075df44f501a17cfdf8542d224f0d36095a2adc7aee4ef0a5"
+checksum = "7d6f32a0ff4a9f6f01231eb2059cc85479330739333e0e58cadf03b6af2cca10"
 dependencies = [
  "cfg-if",
- "windows-sys 0.48.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
