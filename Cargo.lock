@@ -197,8 +197,8 @@ checksum = "773648b94d0e5d620f64f280777445740e61fe701025087ec8b57f45c791888b"
 
 [[package]]
 name = "cpc-breadcrumbs"
-version = "0.3.0"
-source = "git+https://github.com/josephwander-arch/cpc-breadcrumbs?tag=v0.3.0#30b6522213bb2cf09da6c0ff25bffef3334d6b68"
+version = "0.3.1"
+source = "git+https://github.com/AIWander/cpc-breadcrumbs?tag=v0.3.1#b54395f9d207e15038fe98926dac16669ce1c8e5"
 dependencies = [
  "anyhow",
  "chrono",
@@ -226,7 +226,7 @@ dependencies = [
 [[package]]
 name = "cpc-paths"
 version = "0.1.1"
-source = "git+https://github.com/josephwander-arch/cpc-paths?tag=v0.1.1#64599715ec2a21bd3a02f2deb7b6b848d7a4a477"
+source = "git+https://github.com/AIWander/cpc-paths?tag=v0.1.1#64599715ec2a21bd3a02f2deb7b6b848d7a4a477"
 dependencies = [
  "anyhow",
  "chrono",
