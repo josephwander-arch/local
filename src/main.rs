@@ -30,6 +30,11 @@ struct JsonRpcResponse {
 }
 
 fn main() {
+    // Orphan-process prevention: kill this process tree when parent dies.
+    if let Err(e) = cpc_paths::process::ensure_kill_on_parent_death() {
+        eprintln!("[warn] job-object setup failed: {e}");
+    }
+
     // Non-blocking cleanup of breadcrumb archives older than LOCAL_BREADCRUMB_RETENTION_DAYS (default 30d)
     tools::breadcrumbs_startup_cleanup();
 
