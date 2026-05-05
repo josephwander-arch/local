@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
+  "name": "local",
+  "display_name": "CPC Local",
+  "version": "1.2.15",
+  "description": "File I/O, transforms, git, persistent shell sessions for Claude",
+  "long_description": "CPC Local provides file read/write, data transforms (JSON, CSV, base64), git operations, and persistent shell sessions. It replaces ops as the primary execution server in Desktop-tier configurations.",
+  "author": {
+    "name": "AIWander",
+    "url": "https://github.com/AIWander/local"
+  },
+  "homepage": "https://github.com/AIWander/local",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AIWander/local"
+  },
+  "license": "MIT",
+  "keywords": ["mcp", "claude", "cpc", "filesystem", "git", "sessions"],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/local.exe",
+    "mcp_config": {
+      "command": "${__dirname}/server/local.exe",
+      "args": [],
+      "env": {}
+    }
+  },
+  "compatibility": {
+    "claude_desktop": ">=0.10.0",
+    "platforms": ["win32"]
+  }
+}
